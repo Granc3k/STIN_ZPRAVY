@@ -11,22 +11,22 @@
 **init prostředí - musí se v root složce pro tenhle projekt:**
 
 ### Windows
-- py -3 -m venv .venv
-- .\.venv\Scripts\activate
-- pip install Flask
+- `py -3 -m venv .venv`
+- `.\.venv\Scripts\activate`
+- `pip install Flask`
 
 #### Pokud nefachčí
-- Set-ExecutionPolicy Unrestricted -Scope CurrentUser
+- `Set-ExecutionPolicy Unrestricted -Scope CurrentUser`
 
 nebo
 
-- Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+- `Set-ExecutionPolicy RemoteSigned -Scope CurrentUser`
 
 
 ### macOS
-- python3 -m venv .venv
-- . .venv/bin/activate
-- pip install Flask
+- `python3 -m venv .venv`
+- `. .venv/bin/activate`
+- `pip install Flask`
 
 
 
