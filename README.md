@@ -30,7 +30,7 @@ nebo
 
 
 
-**Kdyby se něco pokazilo ve virt. prostředí:**
+### Kdyby se něco pokazilo ve venv
 
 ***Dependencies:***
 - pip install Werkzeug
