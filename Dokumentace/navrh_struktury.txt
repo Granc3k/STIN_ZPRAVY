@@ -1,0 +1,11 @@
+/flask_app/
+│── app.py                # Hlavní Flask aplikace
+│── config.py             # Konfigurace aplikace
+│── database.py           # Správa databáze
+│── models.py             # Datové modely
+│── tasks.py              # Asynchronní úkoly Celery
+│── services.py           # Služby pro volání API
+│── static/               # Statické soubory (pokud budou)
+│── templates/            # HTML šablony (pokud budou)
+│── requirements.txt      # Závislosti aplikace
+│── Dockerfile            # Dockerizace aplikace (volitelné)
