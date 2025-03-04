@@ -9,3 +9,7 @@ dist/
 htmlcov/
 .tox/
 docs/_build/
+
+
+# drawio
+*.bkp
