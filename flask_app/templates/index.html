@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Burza Zprávy</title>
+</head>
+<body>
+    <h1>Odeslat JSON data</h1>
+    <textarea id="jsonInput" rows="10" cols="50">{"ticker": "AAPL"}</textarea><br>
+    <button onclick="submitData()">Odeslat</button>
+    <p id="response"></p>
+
+    <script>
+        function submitData() {
+            const data = document.getElementById("jsonInput").value;
+            fetch("/submit", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: data
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("response").innerText = "Request ID: " + data.request_id;
+            })
+            .catch(error => console.error("Chyba:", error));
+        }
+    </script>
+</body>
+</html>
