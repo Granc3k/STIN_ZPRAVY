@@ -2,7 +2,7 @@
 
 ## Windows
 - py -3 -m venv .venv
-- .\.venv\Scripts\activate
+- ./.venv/Scripts/activate
 - pip install Flask
 
 ## macOS
@@ -17,8 +17,17 @@ nebo
 
 - Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 
+## Přidané knihovny nad rámec
+- pip install flask-sqlalchemy
+- pip install newsapi-python
 
-## Kdyby se něco pokazilo ve virt. prostředí:
+
+# Spuštění
+- ./.venv/Scripts/activate
+- flask --app .\flask_app\app.py run
+
+
+## Kdyby se něco pokazilo ve virt. prostředí s Flaskem:
 
 ***Dependencies:***
 - pip install Werkzeug
@@ -31,3 +40,5 @@ nebo
 ***Optional dependencies:***
 - pip install python-dotenv
 - pip install watchdog
+
+
