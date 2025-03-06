@@ -1,4 +1,4 @@
-**Semestrální práce předmětu STIN - modul Zprávy**
+# Semestrální práce předmětu STIN - modul Zprávy
 
 - Martin "Granc3k" Šimon, Jakub Koněrza
 
