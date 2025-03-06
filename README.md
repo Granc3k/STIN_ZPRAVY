@@ -4,7 +4,7 @@
 
 ## Framework
 
-- Django
+- Flask :)
 
 ## Konfigurace
 
