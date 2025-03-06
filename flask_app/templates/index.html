@@ -3,17 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Burza Zprávy</title>
+    <title>STIN - Zprávy modul</title>
 </head>
 <body>
     <h1>Odeslat JSON data</h1>
-    <textarea id="jsonInput" rows="10" cols="50">{"ticker": "AAPL"}</textarea><br>
-    <button onclick="submitData()">Odeslat</button>
+    
+    <textarea id="jsonInput" rows="10" cols="50">[
+        {
+          "name": "Nazev spolecnosti",
+          "from": "datum od kdy hledat zprávy ve formátu YYYY-MM-DD",
+          "to": "datum do kdy hledat zprávy ve formátu YYYY-MM-DD"
+        },
+        {
+          "name": "Nazev dalsi spolecnosti",
+          "from": "dalsi datum",
+          "to": "dalsi datum"
+        }
+    ]</textarea><br>
+
+    <button id="submitButton" onclick="submitData()">Odeslat</button>
     <p id="response"></p>
 
     <script>
         function submitData() {
             const data = document.getElementById("jsonInput").value;
+
             fetch("/submit", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -21,7 +35,15 @@
             })
             .then(response => response.json())
             .then(data => {
-                document.getElementById("response").innerText = "Request ID: " + data.request_id;
+                const requestId = data.request_id;
+                document.getElementById("response").innerHTML = `
+                    <p>Request ID: ${requestId}</p>
+                    <p>Běžte na odkaz: <a href="/output/${requestId}/status" target="_blank">/output/${requestId}/status</a> pro zkontrolování stavu zpracování.</p>
+                `;
+
+                // Skrytí textového pole a tlačítka po úspěšném odeslání
+                document.getElementById("jsonInput").style.display = "none";
+                document.getElementById("submitButton").style.display = "none";
             })
             .catch(error => console.error("Chyba:", error));
         }

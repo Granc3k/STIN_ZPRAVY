@@ -9,7 +9,8 @@ dist/
 htmlcov/
 .tox/
 docs/_build/
-
+instance/
+config_keys.py
 
 # drawio
 *.bkp

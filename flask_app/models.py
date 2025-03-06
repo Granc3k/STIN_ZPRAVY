@@ -1,6 +1,6 @@
+from database import db
 from flask_sqlalchemy import SQLAlchemy
 
-db = SQLAlchemy()
 
 class RequestData(db.Model):
     id = db.Column(db.Integer, primary_key=True)
