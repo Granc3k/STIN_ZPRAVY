@@ -38,4 +38,4 @@ Pokud něco nefunguje:
 - pip install watchdog
 
 ## Návrh zpracování
-[diagram](./Dokumentace/navrh_zpracovani.drawio)
+![diagram](./Dokumentace/navrh_zpracovani.svg)
