@@ -3,41 +3,29 @@
 ## Windows
 - py -3 -m venv .venv
 - ./.venv/Scripts/activate
-- pip install Flask
-
-## macOS
-- python3 -m venv .venv
-- . .venv/bin/activate
-- pip install Flask
-
-***Pokud nefachčí na Widlích:***
-- Set-ExecutionPolicy Unrestricted -Scope CurrentUser
-
-nebo
-
-- Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
-
-## Přidané knihovny nad rámec
-- pip install flask-sqlalchemy
-- pip install newsapi-python
-
-
-# Spuštění
-- ./.venv/Scripts/activate
+- pip install -r requirements.txt
 - flask --app .\flask_app\app.py run
 
+Pokud něco nefunguje:
+- Set-ExecutionPolicy Unrestricted -Scope CurrentUser
+- Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 
-## Kdyby se něco pokazilo ve virt. prostředí s Flaskem:
+## macOS
+- python3 -m venv venv
+- . venv/bin/activate
+- pip install -r requirements.txt
+- flask --app ./flask_app/app.py run
 
 ***Dependencies:***
+- pip install flask-sqlalchemy
+- pip install newsapi-python
+- pip install Flask
 - pip install Werkzeug
 - pip install Jinja2
 - pip install -U MarkupSafe
 - pip install -U itsdangerous
 - pip install click
 - pip install blinker
-
-***Optional dependencies:***
 - pip install python-dotenv
 - pip install watchdog
 
