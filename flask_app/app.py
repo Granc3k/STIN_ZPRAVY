@@ -1,13 +1,11 @@
+import threading
 from flask import Flask, render_template, request, jsonify
 from database import db, init_db
 from models import RequestData
 from tasks import process_request
 
 app = Flask(__name__)
-init_db(app)  # Správné propojení databáze s aplikací
-
-with app.app_context():
-    db.create_all()  # Zajistí, že databáze existuje
+init_db(app)
 
 
 @app.route("/", methods=["GET"])
@@ -24,13 +22,12 @@ def submit():
     with app.app_context():
         new_request = RequestData(status="pending", input_data=data)
         db.session.add(new_request)
-        db.session.commit()  # Commitujeme data
+        db.session.commit()
+        request_id = new_request.id  # Uložíme ID requestu
 
-        request_id = new_request.id  # Uložíme ID ještě předtím, než session skončí
+    threading.Thread(target=process_request, args=(request_id, app)).start()
 
-    process_request(request_id)
-
-    return jsonify({"request_id": request_id}), 202  # Vracíme uložené ID
+    return jsonify({"request_id": request_id}), 202  # Hned vrátíme ID requestu
 
 
 @app.route("/output/<int:request_id>/status", methods=["GET"])
