@@ -1,8 +1,8 @@
 import json
 from flask import Flask, render_template, request, jsonify, redirect, url_for
-from database import db, init_db
-from models import RequestData
-from tasks import process_request
+from flask_app.database import db, init_db
+from flask_app.models import RequestData
+from flask_app.tasks import process_request
 import threading
 
 app = Flask(__name__)
@@ -46,7 +46,7 @@ def submit():
 @app.route("/output/<int:request_id>/status", methods=["GET"])
 def get_status(request_id):
     with app.app_context():
-        request_data = RequestData.query.get(request_id)
+        request_data = db.session.get(RequestData, request_id)
         if not request_data:
             return jsonify({"error": "Request not found"}), 404
         return jsonify({"status": request_data.status})
@@ -55,7 +55,7 @@ def get_status(request_id):
 @app.route("/output/<int:request_id>", methods=["GET"])
 def get_output(request_id):
     with app.app_context():
-        request_data = RequestData.query.get(request_id)
+        request_data = db.session.get(RequestData, request_id)
         if not request_data or request_data.status != "done":
             return jsonify({"error": "Data not ready"}), 404
         return jsonify(request_data.processed_data)
