@@ -1,13 +1,12 @@
-from flask import Flask, render_template, request, jsonify
+import json
+from flask import Flask, render_template, request, jsonify, redirect, url_for
 from database import db, init_db
 from models import RequestData
 from tasks import process_request
+import threading
 
 app = Flask(__name__)
-init_db(app)  # Správné propojení databáze s aplikací
-
-with app.app_context():
-    db.create_all()  # Zajistí, že databáze existuje
+init_db(app)
 
 
 @app.route("/", methods=["GET"])
@@ -15,22 +14,33 @@ def index():
     return render_template("index.html")
 
 
-@app.route("/submit", methods=["POST"])
+@app.route("/submit", methods=["POST", "GET"])
 def submit():
-    data = request.json
-    if not data:
-        return jsonify({"error": "Invalid JSON data"}), 400
+    if request.method == "POST":
+        data = request.json
+        if not data:
+            return jsonify({"error": "Invalid JSON data"}), 400
+    else:
+        data_param = request.args.get("data")
+        if not data_param:
+            return jsonify({"error": "Missing data parameter"}), 400
+        try:
+            data = json.loads(data_param)
+        except json.JSONDecodeError:
+            return jsonify({"error": "Invalid JSON format"}), 400
 
     with app.app_context():
         new_request = RequestData(status="pending", input_data=data)
         db.session.add(new_request)
-        db.session.commit()  # Commitujeme data
+        db.session.commit()
+        request_id = new_request.id
 
-        request_id = new_request.id  # Uložíme ID ještě předtím, než session skončí
+    threading.Thread(target=process_request, args=(request_id, app)).start()
 
-    process_request(request_id)
-
-    return jsonify({"request_id": request_id}), 202  # Vracíme uložené ID
+    if request.method == "GET":
+        return redirect(url_for("get_status", request_id=request_id))
+    else:
+        return jsonify({"request_id": request_id})
 
 
 @app.route("/output/<int:request_id>/status", methods=["GET"])

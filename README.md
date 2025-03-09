@@ -25,6 +25,8 @@ Pokud něco nefunguje:
 - flask --app ./flask_app/app.py run
 
 ## Dependencies
+- pip install newspaper3k
+- pip install lxml[html_clean]
 - pip install flask-sqlalchemy
 - pip install newsapi-python
 - pip install Flask
