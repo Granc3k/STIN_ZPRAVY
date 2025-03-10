@@ -175,6 +175,7 @@ def test_process_request(test_client):
     request_id = response.get_json()["request_id"]
 
     from flask_app.tasks import process_request
+
     with app.app_context():
         db.session.remove()  # Ujistíme se, že žádné předešlé spojení nezůstalo
         db.create_all()  # Vytvoříme tabulky pro testovací databázi
