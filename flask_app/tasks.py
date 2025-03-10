@@ -3,15 +3,26 @@ import threading
 from flask import current_app
 from newsapi import NewsApiClient
 from newspaper import Article  # Knihovna na stahování článků
-from database import db
-from models import RequestData
-from config_keys import NEWS_API_KEY  # Načtení API klíče
+from flask_app.database import db
+from flask_app.models import RequestData
+from flask_app.config_keys import NEWS_API_KEY  # Načtení API klíče
+from sqlalchemy import create_engine
 
 newsapi = NewsApiClient(api_key=NEWS_API_KEY)
 
-
 def process_request(request_id, app):
     with app.app_context():
+        db.session.remove()  # Odstranění starého DB session
+        db.engine.dispose()  # Uvolnění starého připojení (novější verze Flask-SQLAlchemy)
+
+
+        # Ručně vytvoří nové připojení ke sdílené test.db
+        engine = create_engine("sqlite:///database.db", connect_args={"check_same_thread": False})
+        conn = engine.connect()
+        conn.exec_driver_sql("PRAGMA foreign_keys=ON;")  # Pokud používáš cizí klíče
+        conn.close()
+
+        db.create_all()  # Zajištění, že tabulka request_data existuje i ve vlákně
 
         # Načtení dat z databáze
         request_data = db.session.get(RequestData, request_id)
@@ -65,10 +76,6 @@ def process_request(request_id, app):
                             "content": full_content,  # CELÝ TEXT článku místo oříznutého `content`
                         }
                     )
-
-                    print(
-                        f"[INFO] - Zapisovaná data {article.get('title')}, {article.get('description')}, {article.get('url')}, {article.get('publishedAt')}, {article.get('source', {}).get('name')}, {full_content[:200]}..."
-                    )  # Výpis prvních 200 znaků obsahu
 
                 print(
                     f"[INFO] Nalezeno {len(formatted_articles)} zpráv pro {company['name']}."
