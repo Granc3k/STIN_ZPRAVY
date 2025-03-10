@@ -41,3 +41,9 @@ Pokud něco nefunguje:
 
 ## Návrh zpracování
 ![diagram](./Dokumentace/navrh_zpracovani.svg)
+
+## Používání aplikace
+- Úvodní strana je pro zadávání json dat, které chcete zpracovat
+    - Data se dají zadat přes URL parametry pomocí: **"SERVER_URL"/submit?data="JSON_DATA"**
+- Po zadání dat se vygeneruje ID requestu a zobrazí se Vám na stránce. Pod tímto IDčkem následně naleznete svá zpracovaná data na **"SERVER_URL"/output/"ID_requestu"**
+    -   Data se chvíli budou zpracovávat, tudíž pro kontrolování stavu zpracování dat kontrolujte **"SERVER_URL"/output/"ID_requestu"/status**. Stavy jso **done, pending**

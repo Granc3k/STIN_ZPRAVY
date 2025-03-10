@@ -13,7 +13,7 @@ sys.modules["flask_app.config_keys"] = MagicMock()
 @pytest.fixture(scope='module')
 def test_client():
     app.config['TESTING'] = True
-    app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///test.db"
+    app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///database.db"
     with app.test_client() as testing_client:
         with app.app_context():
             db.create_all()
