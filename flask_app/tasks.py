@@ -15,12 +15,12 @@ def process_request(request_id, app):
         db.session.remove()  # Odstranění starého DB session
         db.engine.dispose()  # Uvolnění starého připojení (novější verze Flask-SQLAlchemy)
 
-
+        # BYLO VYTVOŘENO KVŮLI TESTŮM - IDK UŽ ASI NENÍ TŘEBA
         # Ručně vytvoří nové připojení ke sdílené test.db
-        engine = create_engine("sqlite:///database.db", connect_args={"check_same_thread": False})
-        conn = engine.connect()
-        conn.exec_driver_sql("PRAGMA foreign_keys=ON;")  # Pokud používáš cizí klíče
-        conn.close()
+        # engine = create_engine("sqlite:///database.db", connect_args={"check_same_thread": False})
+        # conn = engine.connect()
+        # conn.exec_driver_sql("PRAGMA foreign_keys=ON;")  # Pokud používáš cizí klíče
+        # conn.close()
 
         db.create_all()  # Zajištění, že tabulka request_data existuje i ve vlákně
 
