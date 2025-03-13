@@ -1,6 +1,6 @@
 # Semestrální práce předmětu STIN - modul Zprávy
 
-- Martin "Granc3k" Šimon, Jakub Koněrza
+- Martin "Granc3k" Šimon, Jakub Koněrza, Matěj Retych
 
 ## Framework
 

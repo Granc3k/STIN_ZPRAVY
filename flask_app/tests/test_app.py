@@ -85,34 +85,68 @@ def test_submit_invalid_json_format(test_client):
 # ====================== TESTY STAVU POŽADAVKŮ ======================
 
 
-def test_status_pending(test_client):
-    """Test status endpointu před zpracováním"""
-    new_request = RequestData(status="pending", input_data=[{"name": "Apple"}])
-    db.session.add(new_request)
-    db.session.commit()
-    response = test_client.get(f"/output/{new_request.id}/status")
+def test_output_status_valid_request(test_client):
+    """Testuje, že endpoint /output/<request_id>/status vrací správný request_id a status"""
+    with app.app_context():
+        new_request = RequestData(status="pending", input_data=[])
+        db.session.add(new_request)
+        db.session.commit()
+        request_id = new_request.id
+
+    response = test_client.get(f"/output/{request_id}/status")
     assert response.status_code == 200
-    assert response.get_json()["status"] == "pending"
+
+    data = response.get_json()
+    assert "request_id" in data
+    assert "status" in data
+    assert data["request_id"] == request_id
+    assert data["status"] == "pending"
 
 
-def test_output_none_processed_data(test_client):
-    """Testuje, co se stane, když `processed_data` je `None`."""
-    new_request = RequestData(status="done", processed_data=None)
-    db.session.add(new_request)
-    db.session.commit()
+def test_output_status_done_request(test_client):
+    """Testuje, že endpoint /output/<request_id>/status vrací 'done' pro dokončený request"""
+    with app.app_context():
+        new_request = RequestData(status="done", input_data=[])
+        db.session.add(new_request)
+        db.session.commit()
+        request_id = new_request.id
 
-    response = test_client.get(f"/output/{new_request.id}")
+    response = test_client.get(f"/output/{request_id}/status")
     assert response.status_code == 200
-    assert response.get_json() in [
-        {},
-        None,
-    ]  # Ověříme, že odpověď je buď `{}` nebo `None`
+
+    data = response.get_json()
+    assert "request_id" in data
+    assert "status" in data
+    assert data["request_id"] == request_id
+    assert data["status"] == "done"
 
 
-def test_output_invalid_request_id(test_client):
-    """Testuje odpověď na nevalidní request_id."""
-    response = test_client.get("/output/invalid_id")
+def test_output_status_invalid_request(test_client):
+    """Testuje, že neexistující request_id vrátí správnou chybu 404"""
+    response = test_client.get("/output/999999/status")
     assert response.status_code == 404
+
+    data = response.get_json()
+    assert "error" in data
+    assert data["error"] == "Request not found"
+
+
+def test_output_status_processing_request(test_client):
+    """Testuje, že endpoint /output/<request_id>/status vrací 'processing' pro request ve zpracování"""
+    with app.app_context():
+        new_request = RequestData(status="processing", input_data=[])
+        db.session.add(new_request)
+        db.session.commit()
+        request_id = new_request.id
+
+    response = test_client.get(f"/output/{request_id}/status")
+    assert response.status_code == 200
+
+    data = response.get_json()
+    assert "request_id" in data
+    assert "status" in data
+    assert data["request_id"] == request_id
+    assert data["status"] == "processing"
 
 
 # ====================== TESTY ZPRACOVÁNÍ POŽADAVKŮ VE VLÁKNECH ======================
@@ -336,3 +370,85 @@ def test_process_request_invalid_request_data(test_client):
     if len(data) > 0:
         assert "error" in data[0]
         assert "Invalid data format" in data[0]["error"]
+
+
+# ====================== TESTY PRO UI ======================
+def test_ui_get_empty_html(test_client):
+    """Testuje, že GET /UI vrací HTML stránku"""
+    response = test_client.get("/UI")
+    assert response.status_code == 200
+    assert "text/html" in response.content_type
+
+
+def test_ui_get_empty_json(test_client):
+    """Testuje, že GET /UI s Accept: application/json vrací JSON"""
+    response = test_client.get("/UI", headers={"Accept": "application/json"})
+    assert response.status_code == 200
+
+    data = response.get_json()
+    assert data is not None
+    assert "stocks" in data
+
+    expected_companies = ["Nvidia", "Tesla", "Microsoft", "Google", "Apple"]
+    for company in expected_companies:
+        assert any(
+            stock["company"] == company and stock["status"] == "žádné změny"
+            for stock in data["stocks"]
+        )
+
+
+def test_ui_post_update(test_client):
+    """Testuje, že POST /UI aktualizuje stav společnosti"""
+    update_data = [{"name": "Nvidia", "status": 1}, {"name": "Apple", "status": 0}]
+    response = test_client.post(
+        "/UI", data=json.dumps(update_data), content_type="application/json"
+    )
+    assert response.status_code == 200
+
+    # Ověření, že změny se aplikovaly
+    response = test_client.get("/UI", headers={"Accept": "application/json"})
+    assert response.status_code == 200
+
+    data = response.get_json()
+    assert data is not None
+    assert any(
+        stock["company"] == "Nvidia" and stock["status"] == "nakoupeno"
+        for stock in data["stocks"]
+    )
+    assert any(
+        stock["company"] == "Apple" and stock["status"] == "prodáno"
+        for stock in data["stocks"]
+    )
+
+
+def test_ui_get_with_url_params(test_client):
+    """Testuje, že GET /UI?data=[...] správně aktualizuje data"""
+    response = test_client.get(
+        '/UI?data=[{"name":"Tesla","status":1},{"name":"Google","status":0}]'
+    )
+    assert response.status_code == 200
+
+    response = test_client.get("/UI", headers={"Accept": "application/json"})
+    assert response.status_code == 200
+
+    data = response.get_json()
+    assert data is not None
+    assert any(
+        stock["company"] == "Tesla" and stock["status"] == "nakoupeno"
+        for stock in data["stocks"]
+    )
+    assert any(
+        stock["company"] == "Google" and stock["status"] == "prodáno"
+        for stock in data["stocks"]
+    )
+
+
+def test_ui_get_invalid_json_in_url(test_client):
+    """Testuje, že GET /UI s nevalidním JSON parametrem vrací chybu 400"""
+    response = test_client.get('/UI?data={"name":"Nvidia","status":1}')
+    assert response.status_code == 400
+
+    data = response.get_json()
+    assert data is not None
+    assert "error" in data
+    assert data["error"] == "Invalid JSON format"
