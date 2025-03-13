@@ -67,7 +67,7 @@ def get_output(request_id):
         if not request_data or request_data.status != "done":
             return jsonify({"error": "Data not ready"}), 404
         return jsonify(request_data.processed_data)
-    
+
 
 # Předdefinované společnosti
 ALLOWED_COMPANIES = ["Nvidia", "Tesla", "Microsoft", "Google", "Apple"]
