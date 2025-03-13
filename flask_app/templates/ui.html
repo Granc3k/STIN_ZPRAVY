@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stav Akcií</title>
+</head>
+<body>
+    <h1>Stav Akcií</h1>
+    <ul id="stockList">
+        {% for stock in data.stocks %}
+            <li>
+                {{ stock.company }} - {{ stock.status }} 
+                <br><small>Aktualizováno: {{ stock.updated_at }}</small>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <h2>Odeslat nová data</h2>
+    <textarea id="jsonInput" rows="10" cols="50">
+[
+    {"name": "Nvidia", "status": 0},
+    {"name": "Apple", "status": 1}
+]
+    </textarea><br>
+    <button onclick="submitData()">Odeslat</button>
+
+    <script>
+        function submitData() {
+            const data = document.getElementById("jsonInput").value;
+            fetch("/UI", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: data
+            }).then(response => response.json())
+              .then(() => location.reload())  // Bez alertu, jen refresh pro aktualizaci
+              .catch(error => console.error("Chyba:", error));
+        }
+    </script>
+</body>
+</html>

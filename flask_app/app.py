@@ -4,6 +4,8 @@ from flask_app.database import db, init_db
 from flask_app.models import RequestData
 from flask_app.tasks import process_request
 import threading
+from datetime import datetime
+
 
 app = Flask(__name__)
 init_db(app)
@@ -49,7 +51,10 @@ def get_status(request_id):
         request_data = db.session.get(RequestData, request_id)
         if not request_data:
             return jsonify({"error": "Request not found"}), 404
-        return jsonify({"status": request_data.status})
+        return jsonify({
+            "request_id": request_id,  # Přidání ID requestu do odpovědi
+            "status": request_data.status
+        })
 
 
 @app.route("/output/<int:request_id>", methods=["GET"])
@@ -59,7 +64,47 @@ def get_output(request_id):
         if not request_data or request_data.status != "done":
             return jsonify({"error": "Data not ready"}), 404
         return jsonify(request_data.processed_data)
+    
 
+# Předdefinované společnosti
+ALLOWED_COMPANIES = ["Nvidia", "Tesla", "Microsoft", "Google", "Apple"]
 
+# Paměťová proměnná pro stav akcií (inicializováno jako "žádné změny" s časem "Nikdy")
+stock_data = {company: {"status": "žádné změny", "updated_at": "Nikdy"} for company in ALLOWED_COMPANIES}
+
+@app.route("/UI", methods=["GET", "POST"])
+def ui_page():
+    if request.method == "POST":
+        data = request.json
+    elif request.method == "GET":
+        # Pokusíme se získat JSON data z URL parametru
+        data_param = request.args.get("data")
+        if data_param:
+            try:
+                data = json.loads(data_param)
+            except json.JSONDecodeError:
+                return jsonify({"error": "Invalid JSON format"}), 400
+        else:
+            data = None
+
+    if data:
+        for entry in data:
+            company_name = entry.get("name")
+            status = entry.get("status")
+
+            # Ignorujeme společnosti, které nejsou v seznamu povolených
+            if company_name in ALLOWED_COMPANIES and status in [0, 1]:
+                stock_data[company_name]["status"] = "nakoupeno" if status == 1 else "prodáno"
+                stock_data[company_name]["updated_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        return jsonify({"message": "Data updated successfully"})
+
+    else:
+        # Vytvoříme odpověď pouze s povolenými společnostmi
+        display_data = {
+            "stocks": [{"company": company, "status": data["status"], "updated_at": data["updated_at"]} 
+                       for company, data in stock_data.items()]
+        }
+        return render_template("ui.html", data=display_data)
 if __name__ == "__main__":
     app.run(debug=True)
