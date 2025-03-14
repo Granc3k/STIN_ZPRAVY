@@ -3,10 +3,10 @@ name: Deploy Flask App to Azure
 on:
   push:
     branches:
-      - master  # Spustí se při pushi do master
+      - master # Spustí se při pushi do master
   pull_request:
     branches:
-      - master  # Spustí se i při pull requestu na master
+      - master # Spustí se i při pull requestu na master
 
 jobs:
   test:
@@ -40,7 +40,7 @@ jobs:
           verbose: true
 
   deploy:
-    needs: test  # Deploy se spustí pouze, pokud testy projdou
+    needs: test # Deploy se spustí pouze, pokud testy projdou
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -67,7 +67,7 @@ jobs:
       - name: Deploy to Azure
         uses: azure/webapps-deploy@v2
         with:
-          app-name: "flask-news-app"
+          app-name: "stin-zpravy"
           package: .
 
       - name: Restart Azure App
