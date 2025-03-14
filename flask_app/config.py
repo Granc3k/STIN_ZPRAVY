@@ -1,19 +1,18 @@
 import os
-from flask_app import config_keys
 
 # Preferujeme načítání API klíče z prostředí (produkce, GitHub Actions)
 NEWS_API_KEY = os.getenv("NEWS_API_KEY")
 
 if not NEWS_API_KEY:
     try:
-        from flask_app import config_keys
+        import importlib
+        config_keys = importlib.import_module("flask_app.config_keys")
         NEWS_API_KEY = config_keys.NEWS_API_KEY
-    except ImportError:
+    except ModuleNotFoundError:
         NEWS_API_KEY = None  # Bezpečný fallback
-        print("[WARNING] NEWS_API_KEY není nastaven. Aplikace nemusí správně fungovat.")
+        print("[WARNING] Nepodařilo se načíst config_keys. Používám pouze NEWS_API_KEY z prostředí.")
 
+# Databázová konfigurace
 SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "sqlite:///database.db")
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 SQLALCHEMY_ENGINE_OPTIONS = {"connect_args": {"check_same_thread": False}}
-NEWS_API_KEY = config_keys.NEWS_API_KEY
-# NEWS_API_KEY = secrets.NEWS_API_KEY
