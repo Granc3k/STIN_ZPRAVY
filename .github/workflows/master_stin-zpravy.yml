@@ -3,13 +3,14 @@ name: Deploy Flask App to Azure
 on:
   push:
     branches:
-      - master  # Spustí se při pushi do master
+      - master  # Spustí se pouze při pushi do master
   pull_request:
-    branches:
-      - master  # Spustí se i při pull requestu na master
+    branches-ignore:
+      - master  # Pull requesty do master se ignorují
 
 jobs:
   test:
+    if: github.event_name == 'push'  # Spustí testy jen při pushi, ne při PR
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -31,23 +32,9 @@ jobs:
       - name: Run tests with coverage
         run: pytest --cov --junitxml=junit.xml -o junit_family=legacy --cov-report=xml
 
-      - name: Upload coverage report to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage.xml
-          fail_ci_if_error: true
-          verbose: true
-
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: junit.xml
-
   deploy:
     needs: test  # Deploy se spustí pouze, pokud testy projdou
+    if: github.event_name == 'push'  # Spustí deploy jen při pushi, ne při PR
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
