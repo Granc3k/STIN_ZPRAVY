@@ -1,6 +1,6 @@
 # Semestrální práce předmětu STIN - modul Zprávy
 
-- Martin "Granc3k" Šimon, Jakub Koněrza
+- Martin "Granc3k" Šimon, Jakub Koněrza, Matěj Retych
 
 ## Framework
 
@@ -47,3 +47,13 @@ Pokud něco nefunguje:
     - Data se dají zadat přes URL parametry pomocí: **"SERVER_URL"/submit?data="JSON_DATA"**
 - Po zadání dat se vygeneruje ID requestu a zobrazí se Vám na stránce. Pod tímto IDčkem následně naleznete svá zpracovaná data na **"SERVER_URL"/output/"ID_requestu"**
     -   Data se chvíli budou zpracovávat, tudíž pro kontrolování stavu zpracování dat kontrolujte **"SERVER_URL"/output/"ID_requestu"/status**. Stavy jso **done, pending**
+- Pro zadání dat na prodej/koupi akcii využijte endpoint **"SERVER_URL"/UI**. Data se zde dají zadávat pomocí automaticky pomocí parametru v URL **"SERVER_URL"/UI?data="JSON DATA"**
+
+- Veškeré formáty Json dat jsou k nalezení na samotných endpointech aplikace.
+
+
+## Endpointy
+- / - defaultní strana pro zadávání dat na zpracování zpráv
+- /output/ID_requestu - vypisování zpracovaných dat
+- /output/ID_requestu/status - vypisování stavu zpracování dat
+- /UI - vypisování portfólia
