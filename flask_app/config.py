@@ -1,15 +1,14 @@
 import os
 
-# Načtení proměnné prostředí pro produkci
-if "NEWS_API_KEY" in os.environ:
-    NEWS_API_KEY = os.getenv("NEWS_API_KEY")
-else:
-    # Jinak použijeme lokální soubor (pro vývoj)
+# Preferujeme načítání API klíče z prostředí (produkce, GitHub Actions)
+NEWS_API_KEY = os.getenv("NEWS_API_KEY")
+
+if not NEWS_API_KEY:
     try:
         from flask_app import config_keys
         NEWS_API_KEY = config_keys.NEWS_API_KEY
     except ImportError:
-        NEWS_API_KEY = None  # Fallback, kdyby chyběl
+        NEWS_API_KEY = None  # Bezpečný fallback
         print("[WARNING] NEWS_API_KEY není nastaven. Aplikace nemusí správně fungovat.")
 
 SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "sqlite:///database.db")

@@ -5,7 +5,7 @@ from newsapi import NewsApiClient
 from newspaper import Article  # Knihovna na stahování článků
 from flask_app.database import db
 from flask_app.models import RequestData
-from flask_app.config_keys import NEWS_API_KEY  # Načtení API klíče
+from flask_app.config import NEWS_API_KEY  # Načtení API klíče
 from sqlalchemy import create_engine
 
 newsapi = NewsApiClient(api_key=NEWS_API_KEY)
