@@ -1,81 +1,65 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-# More info on Python, GitHub Actions, and Azure App Service: https://aka.ms/python-webapps-actions
-
-name: Build and deploy Python app to Azure Web App - stin-zpravy
+name: Deploy Flask App to Azure
 
 on:
   push:
     branches:
       - master
-  workflow_dispatch:
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read #This is required for actions/checkout
-
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-      - name: Set up Python version
-        uses: actions/setup-python@v5
+      - name: Set up Python
+        uses: actions/setup-python@v3
         with:
-          python-version: '3.13'
+          python-version: "3.13"
 
-      - name: Create and start virtual environment
-        run: |
-          python -m venv venv
-          source venv/bin/activate
-      
       - name: Install dependencies
-        run: pip install -r requirements.txt
-        
-      # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-      - name: Zip artifact for deployment
-        run: zip release.zip ./* -r
-
-      - name: Upload artifact for deployment jobs
-        uses: actions/upload-artifact@v4
+      - name: Run tests with coverage
+        run: |
+          pytest --cov=flask_app --cov-report=xml
+          
+      - name: Upload coverage report
+        uses: codecov/codecov-action@v2
         with:
-          name: python-app
-          path: |
-            release.zip
-            !venv/
+          files: ./coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}  # Vlož do GitHub Secrets svůj Codecov token
 
   deploy:
+    needs: test  # Spustí se pouze pokud testy proběhnou úspěšně
     runs-on: ubuntu-latest
-    needs: build
-    environment:
-      name: 'Production'
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
-    permissions:
-      id-token: write #This is required for requesting the JWT
-      contents: read #This is required for actions/checkout
-
     steps:
-      - name: Download artifact from build job
-        uses: actions/download-artifact@v4
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v3
         with:
-          name: python-app
+          python-version: "3.9"
 
-      - name: Unzip artifact for deployment
-        run: unzip release.zip
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-      
       - name: Login to Azure
-        uses: azure/login@v2
+        uses: azure/login@v1
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_C4F7A6FBDD154FC78162006B37E2448D }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_36B4366E988C4B63AC67DB5DB437B9CB }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_8E4254C91A2C414082F688EAD4D732C1 }}
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: 'Deploy to Azure Web App'
-        uses: azure/webapps-deploy@v3
-        id: deploy-to-webapp
+      - name: Deploy to Azure
+        uses: azure/webapps-deploy@v2
         with:
-          app-name: 'stin-zpravy'
-          slot-name: 'Production'
-          
+          app-name: "flask-news-app"
+          package: .
+
+      - name: Restart Azure App
+        run: |
+          az webapp restart --name flask-news-app --resource-group my-resource-group
