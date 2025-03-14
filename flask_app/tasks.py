@@ -29,7 +29,7 @@ def process_request(request_id, app):
         if not request_data:
             print(f"[ERROR] Request ID {request_id} nebyl nalezen v databázi.")
             return
-
+        
         # Výpis vstupních dat do konzole
         print(f"\n[INFO] Zpracovávám request ID: {request_id}")
         print(f"[INFO] Vstupní data: {request_data.input_data}")
@@ -39,7 +39,7 @@ def process_request(request_id, app):
         db.session.commit()
 
         results = []
-
+        print(f"[DEBUG] request_data.input_data: {request_data.input_data}")
         # Postupné zpracování každé společnosti
         for company in request_data.input_data:
             print(f"\n[INFO] Získávám zprávy pro společnost: {company['name']}")

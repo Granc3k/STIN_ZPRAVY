@@ -31,6 +31,7 @@ def submit():
         except json.JSONDecodeError:
             return jsonify({"error": "Invalid JSON format"}), 400
 
+    print(f"[DEBUG] Přijatá data: {data}")
     with app.app_context():
         new_request = RequestData(status="pending", input_data=data)
         db.session.add(new_request)
