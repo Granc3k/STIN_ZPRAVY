@@ -4,6 +4,8 @@
 
 [![codecov](https://codecov.io/gh/Granc3k/STIN_ZPRAVY/graph/badge.svg?token=AO8L02LX7E)](https://codecov.io/gh/Granc3k/STIN_ZPRAVY)
 
+**[ODKAZ NA SERVER](https://stin-zpravy.azurewebsites.net/)**  
+
 
 ## Framework
 
