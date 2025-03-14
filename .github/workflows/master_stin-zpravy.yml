@@ -1,18 +1,10 @@
-name: Deploy Flask App to Azure
-
-on:
-  push:
-    branches:
-      - master
-
-jobs:
   test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set up Python
+      - name: Set up Python 3.13
         uses: actions/setup-python@v3
         with:
           python-version: "3.13"
@@ -20,46 +12,18 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r requirements.txt pytest pytest-cov
+
+      - name: Set environment variables
+        run: echo "NEWS_API_KEY=${{ secrets.NEWS_API_KEY }}" >> $GITHUB_ENV
 
       - name: Run tests with coverage
-        run: |
-          pytest --cov=flask_app --cov-report=xml
-          
-      - name: Upload coverage report
-        uses: codecov/codecov-action@v2
+        run: pytest --cov=flask_app --cov-report=xml
+
+      - name: Upload coverage report to Codecov
+        uses: codecov/codecov-action@v3  # Použití nejnovější verze
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}  # Použití tokenu z GitHub Secrets
           files: ./coverage.xml
-          token: ${{ secrets.CODECOV_TOKEN }}  # Vlož do GitHub Secrets svůj Codecov token
-
-  deploy:
-    needs: test  # Spustí se pouze pokud testy proběhnou úspěšně
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v3
-        with:
-          python-version: "3.9"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: Login to Azure
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      - name: Deploy to Azure
-        uses: azure/webapps-deploy@v2
-        with:
-          app-name: "flask-news-app"
-          package: .
-
-      - name: Restart Azure App
-        run: |
-          az webapp restart --name flask-news-app --resource-group my-resource-group
+          fail_ci_if_error: true  # CI failne, pokud Codecov upload selže
+          verbose: true  # Více informací v logu
