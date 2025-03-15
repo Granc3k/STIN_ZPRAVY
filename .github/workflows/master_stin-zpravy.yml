@@ -61,7 +61,8 @@ jobs:
       - name: Deploy environment variables to Azure
         run: |
           az webapp config appsettings set --name stin-zpravy --resource-group stin-zpravy_group \
-          --settings NEWS_API_KEY=${{ secrets.NEWS_API_KEY }}
+          --settings NEWS_API_KEY=${{ secrets.NEWS_API_KEY }} \
+                    OPEN_AI_API_KEY=${{ secrets.OPEN_AI_API_KEY }}
 
       - name: Deploy to Azure
         uses: azure/webapps-deploy@v2

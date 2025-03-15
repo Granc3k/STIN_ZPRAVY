@@ -1,16 +1,23 @@
 import os
 
-# Preferujeme načítání API klíče z prostředí (produkce, GitHub Actions)
+# Preferujeme načítání API klíčů z prostředí (produkce, GitHub Actions)
 NEWS_API_KEY = os.getenv("NEWS_API_KEY")
+OPEN_AI_API_KEY = os.getenv("OPEN_AI_API_KEY")
 
-if not NEWS_API_KEY:
+if not NEWS_API_KEY or not OPEN_AI_API_KEY:
     try:
         import importlib
         config_keys = importlib.import_module("flask_app.config_keys")
-        NEWS_API_KEY = config_keys.NEWS_API_KEY
+        
+        if not NEWS_API_KEY:
+            NEWS_API_KEY = config_keys.NEWS_API_KEY
+        if not OPEN_AI_API_KEY:
+            OPEN_AI_API_KEY = config_keys.OPEN_AI_API_KEY
+
     except ModuleNotFoundError:
-        NEWS_API_KEY = None  # Bezpečný fallback
-        print("[WARNING] Nepodařilo se načíst config_keys. Používám pouze NEWS_API_KEY z prostředí.")
+        print("[WARNING] Nepodařilo se načíst config_keys. Používám pouze API klíče z prostředí.")
+        NEWS_API_KEY = NEWS_API_KEY or None  # Fallback na None
+        OPEN_AI_API_KEY = OPEN_AI_API_KEY or None  # Fallback na None
 
 # Databázová konfigurace
 SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "sqlite:///database.db")
