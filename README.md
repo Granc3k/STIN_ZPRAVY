@@ -10,7 +10,7 @@
 ## Tech Stack
 
 - **Backend:** Flask  
-- **Frontend:** HTML + CSS 🎨  
+- **Frontend:** HTML 🎨  
 - **Analýza zpráv:** OpenAI GPT-4o-mini  
 
 ## Konfigurace
