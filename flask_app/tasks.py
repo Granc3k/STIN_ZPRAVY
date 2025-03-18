@@ -5,10 +5,11 @@ from newsapi import NewsApiClient
 from newspaper import Article  # Knihovna na stahování článků
 from flask_app.database import db
 from flask_app.models import RequestData
-from flask_app.config import NEWS_API_KEY  # Načtení API klíče
+from flask_app.config import NEWS_API_KEY, LIST_SIZE  # Načtení API klíče
 from sqlalchemy import create_engine
 
 newsapi = NewsApiClient(api_key=NEWS_API_KEY)
+
 
 def process_request(request_id, app):
     with app.app_context():
@@ -29,7 +30,7 @@ def process_request(request_id, app):
         if not request_data:
             print(f"[ERROR] Request ID {request_id} nebyl nalezen v databázi.")
             return
-        
+
         # Výpis vstupních dat do konzole
         print(f"\n[INFO] Zpracovávám request ID: {request_id}")
         print(f"[INFO] Vstupní data: {request_data.input_data}")
@@ -50,7 +51,7 @@ def process_request(request_id, app):
                     to=company["to"],  # Datum "do"
                     language="en",
                     sort_by="relevancy",
-                    page_size=5,  # Omezíme na 5 výsledků
+                    page_size=LIST_SIZE,  # Omezení stažených stránek - najdeš v configu
                 )
                 articles_list = articles.get("articles", [])
 
@@ -59,21 +60,26 @@ def process_request(request_id, app):
                 for article in articles_list:
                     full_content = "[ERROR] Nepodařilo se stáhnout článek"
                     try:
-                        news_article = Article(article.get("url"))
+                        news_article = Article(article.get("url"), language="en")
                         news_article.download()
                         news_article.parse()
                         full_content = news_article.text  # Celý text článku
                     except Exception as e:
                         print(f"[ERROR] Chyba při stahování článku: {e}")
 
+                    # odebírání úvodu od autora
+                    temp_text = full_content.split("\n\n")
+                    del temp_text[0]
+
+                    formatted_content = " ".join(temp_text)
+
                     formatted_articles.append(
                         {
                             "title": article.get("title"),
-                            "description": article.get("description"),
                             "url": article.get("url"),
                             "publishedAt": article.get("publishedAt"),
                             "source": article.get("source", {}).get("name"),
-                            "content": full_content,  # CELÝ TEXT článku místo oříznutého `content`
+                            "content": formatted_content,  # CELÝ TEXT článku místo oříznutého `content`
                         }
                     )
 
@@ -92,6 +98,14 @@ def process_request(request_id, app):
         print(f"\n[INFO] Zpracovaná data pro request ID {request_id}:")
         for result in results:
             print(f" - {result['company']}: {len(result.get('articles', []))} zpráv")
+
+        # TODO: Jakub implementace OpenAI API
+        # Návrh pro jakuba, prostě tady se bude volat OpenAI API
+        # for result in results:
+        #    print(f"\n[INFO] Zpracovávám zprávy pro společnost: {result['company']}")
+        #    try:
+        #        for article in result["articles"]:
+        #            print(f"\n[INFO] Zpracovávám článek: {article['title']}")
 
         # Uložení výstupu do DB
         request_data = db.session.get(

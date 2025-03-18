@@ -65,7 +65,7 @@ def test_submit_invalid_json(test_client):
 
 def test_submit_valid_json(test_client):
     """Test validního JSON při /submit"""
-    data = [{"name": "Apple", "from": "2024-03-01", "to": "2024-03-05"}]
+    data = [{"name": "Apple", "from": "2025-03-01", "to": "2025-03-05"}]
     response = test_client.post(
         "/submit", data=json.dumps(data), content_type="application/json"
     )
