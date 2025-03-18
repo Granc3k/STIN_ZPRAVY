@@ -66,7 +66,13 @@ def get_output(request_id):
         request_data = db.session.get(RequestData, request_id)
         if not request_data or request_data.status != "done":
             return jsonify({"error": "Data not ready"}), 404
-        return jsonify(request_data.processed_data)
+
+        print(f"[DEBUG] Typ sentiment_data: {type(request_data.sentiment_data)}")
+        print(f"[DEBUG] Hodnota sentiment_data: {request_data.sentiment_data}")
+
+        # Vrácení dat ve správném formátu
+        return jsonify(request_data.sentiment_data)
+
 
 
 # Předdefinované společnosti

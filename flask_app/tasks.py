@@ -1,3 +1,5 @@
+import json
+
 import requests
 import threading
 from flask import current_app
@@ -7,6 +9,8 @@ from flask_app.database import db
 from flask_app.models import RequestData
 from flask_app.config import NEWS_API_KEY, LIST_SIZE  # Načtení API klíče
 from sqlalchemy import create_engine
+
+from flask_app.utils.news_rating import NewsRating
 
 newsapi = NewsApiClient(api_key=NEWS_API_KEY)
 
@@ -53,45 +57,58 @@ def process_request(request_id, app):
                     sort_by="relevancy",
                     page_size=LIST_SIZE,  # Omezení stažených stránek - najdeš v configu
                 )
+
+                if articles is None or "articles" not in articles:
+                    raise ValueError(f"API nevrátilo žádná data pro {company['name']}.")
+
                 articles_list = articles.get("articles", [])
 
-                # Uložíme jen relevantní informace včetně STAŽENÍ CELÉHO OBSAHU
+                if not articles_list:
+                    print(f"[WARNING] Nebyly nalezeny žádné zprávy pro {company['name']}.")
+
                 formatted_articles = []
                 for article in articles_list:
                     full_content = "[ERROR] Nepodařilo se stáhnout článek"
+                    article_url = article.get("url", "")
+
+                    if not article_url:
+                        print(f"[WARNING] Článek bez platné URL, přeskočeno.")
+                        continue  # Přeskočení nevalidního článku
+
                     try:
-                        news_article = Article(article.get("url"), language="en")
+                        news_article = Article(article_url, language="en")
                         news_article.download()
                         news_article.parse()
-                        full_content = news_article.text  # Celý text článku
+                        full_content = news_article.text.strip() if news_article.text else full_content
                     except Exception as e:
-                        print(f"[ERROR] Chyba při stahování článku: {e}")
+                        print(f"[ERROR] Chyba při stahování článku {article_url}: {e}")
 
-                    # odebírání úvodu od autora
+                    # Odstranění úvodu o autorovi článku
                     temp_text = full_content.split("\n\n")
-                    del temp_text[0]
-
-                    formatted_content = " ".join(temp_text)
+                    if len(temp_text) > 1:
+                        del temp_text[0]
+                    formatted_content = " ".join(temp_text).strip()
 
                     formatted_articles.append(
                         {
-                            "title": article.get("title"),
-                            "url": article.get("url"),
-                            "publishedAt": article.get("publishedAt"),
-                            "source": article.get("source", {}).get("name"),
-                            "content": formatted_content,  # CELÝ TEXT článku místo oříznutého `content`
+                            "title": article.get("title", "Bez názvu"),
+                            "url": article_url,
+                            "publishedAt": article.get("publishedAt", "Neznámé datum"),
+                            "source": article.get("source", {}).get("name", "Neznámý zdroj"),
+                            "content": formatted_content,
                         }
                     )
 
-                print(
-                    f"[INFO] Nalezeno {len(formatted_articles)} zpráv pro {company['name']}."
-                )
+                print(f"[INFO] Nalezeno {len(formatted_articles)} zpráv pro {company['name']}.")
 
-                results.append(
-                    {"company": company["name"], "articles": formatted_articles}
-                )
+                results.append({"company": company["name"], "articles": formatted_articles})
+
+            except ValueError as ve:
+                print(f"[ERROR] {ve}")
+                results.append({"company": company["name"], "error": str(ve)})
+
             except Exception as e:
-                print(f"[ERROR] Chyba při získávání zpráv pro {company['name']}: {e}")
+                print(f"[ERROR] Neočekávaná chyba při zpracování zpráv pro {company['name']}: {e}")
                 results.append({"company": company["name"], "error": str(e)})
 
         # Výpis zpracovaných dat do konzole
@@ -99,19 +116,55 @@ def process_request(request_id, app):
         for result in results:
             print(f" - {result['company']}: {len(result.get('articles', []))} zpráv")
 
-        # TODO: Jakub implementace OpenAI API
-        # Návrh pro jakuba, prostě tady se bude volat OpenAI API
-        # for result in results:
-        #    print(f"\n[INFO] Zpracovávám zprávy pro společnost: {result['company']}")
-        #    try:
-        #        for article in result["articles"]:
-        #            print(f"\n[INFO] Zpracovávám článek: {article['title']}")
+        # NewsRating
+        news_rater = NewsRating()
+        sentiment_results = []
+        for result in results:
+            print(f"\n[INFO] Zpracovávám zprávy pro společnost: {result['company']}")
+            try:
+                if 'articles' in result and result['articles']:
+                    # Extrakce textů článků pro danou společnost
+                    news_texts = [article['content'] for article in result['articles'] if article.get('content')]
+
+                    if news_texts:
+                        # Konverze seznamu zpráv na JSON řetězec
+                        json_string = json.dumps(news_texts)
+
+                        # Získání hodnocení přes NewsRating
+                        average_rating = news_rater.rate_news(json_string)
+
+                        # Uložení pouze názvu společnosti a hodnocení
+                        sentiment_results.append({
+                            "company_name": result['company'],
+                            "rating": average_rating
+                        })
+
+                        print(f"[INFO] Průměrné hodnocení pro {result['company']}: {average_rating}")
+                    else:
+                        print(f"[WARNING] Žádné textové obsahy pro hodnocení společnosti {result['company']}")
+                        sentiment_results.append({
+                            "company_name": result['company'],
+                            "rating": None
+                        })
+                else:
+                    print(f"[WARNING] Žádné články pro hodnocení společnosti {result['company']}")
+                    sentiment_results.append({
+                        "company_name": result['company'],
+                        "rating": None
+                    })
+            except Exception as e:
+                print(f"[ERROR] Chyba při zpracování hodnocení pro {result['company']}: {e}")
+                sentiment_results.append({
+                    "company_name": result['company'],
+                    "rating": None
+                })
 
         # Uložení výstupu do DB
-        request_data = db.session.get(
-            RequestData, request_id
-        )  # Opětovné načtení objektu
-        request_data.processed_data = results  # Uložení odpovědi API
+        request_data = db.session.get(RequestData, request_id)
+        for item in sentiment_results:
+            if item["rating"] is not None:
+                item["rating"] = float(item["rating"])  # Zajištění, že rating je float
+        request_data.sentiment_data = sentiment_results
         request_data.status = "done"
         db.session.commit()
 
