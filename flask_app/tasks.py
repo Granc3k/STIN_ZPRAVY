@@ -16,6 +16,37 @@ newsapi = NewsApiClient(api_key=NEWS_API_KEY)
 
 
 def process_request(request_id, app):
+    """
+    Zpracuje požadavek na získání, analýzu a hodnocení zpráv pro více společností.
+
+    Tato funkce provádí následující kroky:
+    1. Vytvoří nové připojení k databázi v kontextu aplikace
+    2. Načte data požadavku z databáze pomocí poskytnutého request_id
+    3. Aktualizuje stav požadavku na "processing"
+    4. Pro každou společnost ve vstupních datech:
+       - Získá zprávy pomocí NewsAPI
+       - Stáhne a zpracuje plný obsah každého článku
+       - Formátuje a ukládá informace o článku
+    5. Vypočítá hodnocení sentimentu zpráv pomocí NewsRating
+    6. Uloží výsledky sentimentu do databáze
+    7. Aktualizuje stav požadavku na "done"
+
+    Parametry:
+        request_id (int): Jedinečný identifikátor požadavku ke zpracování
+        app (Flask): Instance Flask aplikace pro vytvoření kontextu
+
+    Návratová hodnota:
+        None
+
+    Vedlejší efekty:
+        - Aktualizuje stav požadavku v databázi
+        - Ukládá výsledky analýzy sentimentu do databáze
+        - Vypisuje zprávy o průběhu a chybové hlášky do konzole
+
+    Výjimky:
+        - Ošetřuje výjimky během získávání zpráv a analýzy sentimentu,
+          zaznamenává chyby, ale pokračuje ve zpracování pro ostatní společnosti
+    """
     with app.app_context():
         db.session.remove()  # Odstranění starého DB session
         db.engine.dispose()  # Uvolnění starého připojení (novější verze Flask-SQLAlchemy)
@@ -29,7 +60,7 @@ def process_request(request_id, app):
 
         db.create_all()  # Zajištění, že tabulka request_data existuje i ve vlákně
 
-        # Načtení dat z databáze
+        # Informace o requestu se předávají pomocí ID v databázi
         request_data = db.session.get(RequestData, request_id)
         if not request_data:
             print(f"[ERROR] Request ID {request_id} nebyl nalezen v databázi.")
@@ -119,12 +150,18 @@ def process_request(request_id, app):
         # NewsRating
         news_rater = NewsRating()
         sentiment_results = []
+
         for result in results:
             print(f"\n[INFO] Zpracovávám zprávy pro společnost: {result['company']}")
             try:
                 if 'articles' in result and result['articles']:
                     # Extrakce textů článků pro danou společnost
-                    news_texts = [article['content'] for article in result['articles'] if article.get('content')]
+                    news_texts = [
+                        f"{article.get('title', '')} {article.get('content', '')}".strip()  # Spojení title a content
+                        for article in result['articles']
+                        if article.get('content')  # Zachováváme podmínku pro obsah
+                    ]
+
 
                     if news_texts:
                         # Konverze seznamu zpráv na JSON řetězec
@@ -133,7 +170,7 @@ def process_request(request_id, app):
                         # Získání hodnocení přes NewsRating
                         average_rating = news_rater.rate_news(json_string)
 
-                        # Uložení pouze názvu společnosti a hodnocení
+                        # Uložení pouze názvu společnosti a hodnocení do výstupu
                         sentiment_results.append({
                             "company_name": result['company'],
                             "rating": average_rating
