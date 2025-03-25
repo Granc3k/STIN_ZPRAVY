@@ -100,6 +100,22 @@ def get_status(request_id):
                 "status": request_data.status,
             }
         )
+        
+@app.route("/output/<int:request_id>/all", methods=["GET"])
+def get_all_request_data(request_id):
+    with app.app_context():
+        request_data = db.session.get(RequestData, request_id)
+        if not request_data:
+            return jsonify({"error": "Request not found"}), 404
+
+        return jsonify({
+            "request_id": request_data.id,
+            "status": request_data.status,
+            "input_data": request_data.input_data,
+            "news_data": request_data.news_data,
+            "sentiment_data": request_data.sentiment_data,
+        })
+
 
 
 @app.route("/output/<int:request_id>", methods=["GET"])

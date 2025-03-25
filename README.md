@@ -87,7 +87,8 @@ pytest --cov=flask_app flask_app/tests/
 | `/`                       | Výchozí stránka pro zadávání dat ke zpracování zpráv |
 | `/output/<ID_requestu>`   | Zobrazení zpracovaných dat                   |
 | `/output/<ID_requestu>/status` | Zobrazení stavu zpracování dat        |
-| `/UI`                     | Zobrazení portfolia                          |
+| `/output/<ID_requestu>/all` | Zobrazení veškerých dat k danému requestu        |
+| `/UI`                     | Zobrazení portfolia                               |
 
 
 ## Ukázka vzorových dat
