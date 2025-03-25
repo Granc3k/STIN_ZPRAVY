@@ -18,6 +18,43 @@ def index():
 
 @app.route("/submit", methods=["POST", "GET"])
 def submit():
+    """
+    Zpracuje vstupní data přes POST nebo GET a spustí asynchronní zpracování požadavku.
+
+    Pro POST:
+    - Očekává JSON data v těle požadavku
+    Pro GET:
+    - Očekává URL parametr 'data' obsahující JSON řetězec
+
+    Args:
+        N/A (přijímá data přes request.json pro POST nebo request.args pro GET)
+
+    Returns:
+        Pro POST:
+            JSON: {"request_id": <id>} se status code 200
+        Pro GET:
+            Redirect na /status endpoint s request_id
+
+    Raises:
+        400 Bad Request:
+            - Pokud chybí JSON data (POST)
+            - Pokud chybí parametr 'data' (GET)
+            - Pokud data nejsou validní JSON
+
+    Examples:
+        POST request:
+        curl -X POST -H "Content-Type: application/json" -d '{"key":"value"}' http://localhost:5000/submit
+
+        GET request:
+        http://localhost:5000/submit?data={"key":"value"}
+
+    Poznámky:
+        - Požadavek je zpracován asynchronně v background threadu
+        - Vytvoří nový záznam v DB se statusem 'pending'
+        - Pro sledování stavu použijte /status endpoint s vráceným request_id
+    """
+
+    # nacteni dat do promenne "data"
     if request.method == "POST":
         data = request.json
         if not data:
@@ -31,17 +68,22 @@ def submit():
         except json.JSONDecodeError:
             return jsonify({"error": "Invalid JSON format"}), 400
 
-    print(f"[DEBUG] Přijatá data: {data}")
-    with app.app_context():
-        new_request = RequestData(status="pending", input_data=data)
-        db.session.add(new_request)
-        db.session.commit()
-        request_id = new_request.id
 
+    print(f"[DEBUG] Přijatá data: {data}")
+    # predani promenne "data" do tasks.py
+    with app.app_context():
+        new_request = RequestData(status="pending", input_data=data) # vytvoreni prvku v databazi
+        db.session.add(new_request) # pridani prvku do databaze
+        db.session.commit() # ulozeni zmen do databaze
+        request_id = new_request.id # ziskani ID noveho prvku v databazi
+
+    # spusteni noveho vlakna s funkci process_request
     threading.Thread(target=process_request, args=(request_id, app)).start()
 
+    # pokud je metoda GET, presmeruje na /status endpoint s request_id
     if request.method == "GET":
         return redirect(url_for("get_status", request_id=request_id))
+    # pokud je metoda POST, vrati JSON s request_id
     else:
         return jsonify({"request_id": request_id})
 
@@ -66,7 +108,13 @@ def get_output(request_id):
         request_data = db.session.get(RequestData, request_id)
         if not request_data or request_data.status != "done":
             return jsonify({"error": "Data not ready"}), 404
-        return jsonify(request_data.processed_data)
+
+        print(f"[DEBUG] Typ sentiment_data: {type(request_data.sentiment_data)}")
+        print(f"[DEBUG] Hodnota sentiment_data: {request_data.sentiment_data}")
+
+        # Vrácení dat ve správném formátu
+        return jsonify(request_data.sentiment_data)
+
 
 
 # Předdefinované společnosti
