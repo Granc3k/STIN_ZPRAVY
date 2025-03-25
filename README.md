@@ -74,7 +74,10 @@ Možné stavy:
 - Formáty všech podporovaných JSON struktur jsou k dispozici přímo na jednotlivých endpointech aplikace.
 
 
-
+## Spouštění testů
+```bash
+pytest --cov=flask_app flask_app/tests/
+```
 
 
 ## Endpointy
@@ -89,6 +92,8 @@ Možné stavy:
 
 ## Ukázka vzorových dat
 - pro posílaných dat na zpracování:
+- pro nejlepší výsledek žádejte o zpracování dat maximálně 2-3 týdny zpětně od vašeho aktuálního datumu - jinak se může stát že API nedokáže vzít data
+
 ```json
 [
   {

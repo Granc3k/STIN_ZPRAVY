@@ -11,6 +11,7 @@ htmlcov/
 docs/_build/
 instance/
 config_keys.py
+datastructure.txt
 
 # drawio
 *.bkp
