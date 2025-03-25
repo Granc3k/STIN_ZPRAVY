@@ -142,10 +142,7 @@ def process_request(request_id, app):
                 print(f"[ERROR] Neočekávaná chyba při zpracování zpráv pro {company['name']}: {e}")
                 results.append({"company": company["name"], "error": str(e)})
 
-        # Výpis zpracovaných dat do konzole
-        print(f"\n[INFO] Zpracovaná data pro request ID {request_id}:")
-        for result in results:
-            print(f" - {result['company']}: {len(result.get('articles', []))} zpráv")
+
 
         # NewsRating
         news_rater = NewsRating()
@@ -201,7 +198,8 @@ def process_request(request_id, app):
         for item in sentiment_results:
             if item["rating"] is not None:
                 item["rating"] = float(item["rating"])  # Zajištění, že rating je float
-        request_data.sentiment_data = sentiment_results
+        request_data.sentiment_data = sentiment_results # sentiment_data
+        request_data.news_data = json.dumps(results) # news_data
         request_data.status = "done"
         db.session.commit()
 
