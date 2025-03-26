@@ -3,6 +3,7 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for
 from flask_app.database import db, init_db
 from flask_app.models import RequestData
 from flask_app.tasks import process_request
+from flask_app.config import ALLOWED_COMPANIES_IN_UI
 import threading
 from datetime import datetime
 
@@ -139,7 +140,7 @@ def get_output(request_id):
 
 
 # Předdefinované společnosti
-ALLOWED_COMPANIES = ["Nvidia", "Tesla", "Microsoft", "Google", "Apple"]
+ALLOWED_COMPANIES = ALLOWED_COMPANIES_IN_UI
 
 # Paměťová proměnná pro stav akcií (inicializováno jako "žádné změny" s časem "Nikdy")
 stock_data = {

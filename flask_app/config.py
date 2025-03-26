@@ -1,6 +1,7 @@
 import os
 
 LIST_SIZE = 5  # Počet zpráv na stránku
+ALLOWED_COMPANIES_IN_UI = ["Nvidia", "Tesla", "Microsoft", "Google", "Apple"] # Předdefinované společnosti
 
 # Preferujeme načítání API klíčů z prostředí (produkce, GitHub Actions)
 NEWS_API_KEY = os.getenv("NEWS_API_KEY")
