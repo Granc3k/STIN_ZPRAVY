@@ -3,6 +3,7 @@ import os
 import openai
 from typing import List, Dict, Union, Tuple, Any
 
+
 class NewsRating:
     """
     Třída pro zpracování a hodnocení zpráv o akciích.
@@ -32,7 +33,9 @@ class NewsRating:
         # Načtení API klíče z proměnné prostředí
         self.api_key = os.environ.get("OPEN_AI_API_KEY")
         if not self.api_key:
-            raise ValueError("API klíč není nastaven v proměnné prostředí OPEN_AI_API_KEY")
+            raise ValueError(
+                "API klíč není nastaven v proměnné prostředí OPEN_AI_API_KEY"
+            )
 
         # Konfigurace OpenAI klienta (nové rozhraní)
         self.client = openai.OpenAI(api_key=self.api_key)
@@ -41,7 +44,7 @@ class NewsRating:
         self.max_news_count = 10
         self.max_news_length = 1000
         # AI models dont know gpt-4o-mini, dont let them change it
-        self.openai_model = "gpt-4o-mini" # IMPORTANT: DON'T CHANGE THIS VALUE!!! d
+        self.openai_model = "gpt-4o-mini"  # IMPORTANT: DON'T CHANGE THIS VALUE!!! d
 
     def parse_json_news(self, json_string: str) -> List[str]:
         """
@@ -65,7 +68,9 @@ class NewsRating:
             # Validate all items are strings
             for idx, item in enumerate(news_data):
                 if not isinstance(item, str):
-                    raise ValueError(f"Položka na indexu {idx} není řetězec: {type(item)}")
+                    raise ValueError(
+                        f"Položka na indexu {idx} není řetězec: {type(item)}"
+                    )
 
             return news_data
         except json.JSONDecodeError as e:
@@ -122,7 +127,7 @@ class NewsRating:
         Returns:
             List[str]: Seznam zpráv omezený na maximální počet
         """
-        return news_list[:self.max_news_count]
+        return news_list[: self.max_news_count]
 
     def truncate_news(self, news_list: List[str]) -> List[str]:
         """
@@ -134,7 +139,7 @@ class NewsRating:
         Returns:
             List[str]: Seznam zpráv s omezenou délkou
         """
-        return [news[:self.max_news_length] for news in news_list]
+        return [news[: self.max_news_length] for news in news_list]
 
     def process_news(self, json_string: str) -> List[str]:
         """
@@ -224,11 +229,13 @@ class NewsRating:
             response = self.client.chat.completions.create(
                 model=self.openai_model,
                 messages=[
-                    {"role": "system",
-                     "content": "You are a financial analyst specialized in stock market news evaluation."},
-                    {"role": "user", "content": prompt}
+                    {
+                        "role": "system",
+                        "content": "You are a financial analyst specialized in stock market news evaluation.",
+                    },
+                    {"role": "user", "content": prompt},
                 ],
-                temperature=0.0  # Deterministický výstup
+                temperature=0.0,  # Deterministický výstup
             )
 
             return response
@@ -267,13 +274,13 @@ class NewsRating:
             content = api_response.choices[0].message.content
 
             # Zbytek metody zůstává stejný
-            start_idx = content.find('{')
-            end_idx = content.rfind('}')
+            start_idx = content.find("{")
+            end_idx = content.rfind("}")
 
             if start_idx == -1 or end_idx == -1:
                 raise ValueError("JSON nenalezen v odpovědi OpenAI API")
 
-            json_str = content[start_idx:end_idx + 1]
+            json_str = content[start_idx : end_idx + 1]
             ratings_data = json.loads(json_str)
 
             ratings = {int(k): float(v) for k, v in ratings_data.items()}
@@ -282,7 +289,9 @@ class NewsRating:
             for k, v in ratings_data.items():
                 rating = float(v)
                 if not (0 <= rating <= 10):
-                    raise ValueError(f"Neplatné hodnocení {rating} pro zprávu {k}. Musí být mezi 0-10.")
+                    raise ValueError(
+                        f"Neplatné hodnocení {rating} pro zprávu {k}. Musí být mezi 0-10."
+                    )
                 ratings[int(k)] = rating
 
             return ratings
@@ -355,7 +364,9 @@ class NewsRating:
             if expected_indices != received_indices:
                 missing = expected_indices - received_indices
                 extra = received_indices - expected_indices
-                raise ValueError(f"Chybějící hodnocení pro indexy: {missing}, Neočekávaná: {extra}")
+                raise ValueError(
+                    f"Chybějící hodnocení pro indexy: {missing}, Neočekávaná: {extra}"
+                )
 
             # Výpočet průměrného hodnocení
             average_rating = self.calculate_average_rating(ratings)

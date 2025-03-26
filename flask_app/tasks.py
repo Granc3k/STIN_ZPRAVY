@@ -95,7 +95,9 @@ def process_request(request_id, app):
                 articles_list = articles.get("articles", [])
 
                 if not articles_list:
-                    print(f"[WARNING] Nebyly nalezeny žádné zprávy pro {company['name']}.")
+                    print(
+                        f"[WARNING] Nebyly nalezeny žádné zprávy pro {company['name']}."
+                    )
 
                 formatted_articles = []
                 for article in articles_list:
@@ -110,7 +112,11 @@ def process_request(request_id, app):
                         news_article = Article(article_url, language="en")
                         news_article.download()
                         news_article.parse()
-                        full_content = news_article.text.strip() if news_article.text else full_content
+                        full_content = (
+                            news_article.text.strip()
+                            if news_article.text
+                            else full_content
+                        )
                     except Exception as e:
                         print(f"[ERROR] Chyba při stahování článku {article_url}: {e}")
 
@@ -125,40 +131,47 @@ def process_request(request_id, app):
                             "title": article.get("title", "Bez názvu"),
                             "url": article_url,
                             "publishedAt": article.get("publishedAt", "Neznámé datum"),
-                            "source": article.get("source", {}).get("name", "Neznámý zdroj"),
+                            "source": article.get("source", {}).get(
+                                "name", "Neznámý zdroj"
+                            ),
                             "content": formatted_content,
                         }
                     )
 
-                print(f"[INFO] Nalezeno {len(formatted_articles)} zpráv pro {company['name']}.")
-
-                results.append({"company": company["name"], "articles": formatted_articles})
+                print(
+                    f"[INFO] Nalezeno {len(formatted_articles)} zpráv pro {company['name']}."
+                )
+                # přidání zpráv do výsledků
+                results.append(
+                    {"company": company["name"], "articles": formatted_articles}
+                )
 
             except ValueError as ve:
                 print(f"[ERROR] {ve}")
+                # přidání chyby do výsledků
                 results.append({"company": company["name"], "error": str(ve)})
 
             except Exception as e:
-                print(f"[ERROR] Neočekávaná chyba při zpracování zpráv pro {company['name']}: {e}")
+                print(
+                    f"[ERROR] Neočekávaná chyba při zpracování zpráv pro {company['name']}: {e}"
+                )
+                # přidání chyby do výsledků
                 results.append({"company": company["name"], "error": str(e)})
 
-
-
-        # NewsRating
+        # Implementace AI zpracování
         news_rater = NewsRating()
         sentiment_results = []
 
         for result in results:
             print(f"\n[INFO] Zpracovávám zprávy pro společnost: {result['company']}")
             try:
-                if 'articles' in result and result['articles']:
+                if "articles" in result and result["articles"]:
                     # Extrakce textů článků pro danou společnost
                     news_texts = [
                         f"{article.get('title', '')} {article.get('content', '')}".strip()  # Spojení title a content
-                        for article in result['articles']
-                        if article.get('content')  # Zachováváme podmínku pro obsah
+                        for article in result["articles"]
+                        if article.get("content")  # Zachováváme podmínku pro obsah
                     ]
-
 
                     if news_texts:
                         # Konverze seznamu zpráv na JSON řetězec
@@ -168,38 +181,45 @@ def process_request(request_id, app):
                         average_rating = news_rater.rate_news(json_string)
 
                         # Uložení pouze názvu společnosti a hodnocení do výstupu
-                        sentiment_results.append({
-                            "company_name": result['company'],
-                            "rating": average_rating
-                        })
+                        sentiment_results.append(
+                            {
+                                "company_name": result["company"],
+                                "rating": average_rating,
+                            }
+                        )
 
-                        print(f"[INFO] Průměrné hodnocení pro {result['company']}: {average_rating}")
+                        print(
+                            f"[INFO] Průměrné hodnocení pro {result['company']}: {average_rating}"
+                        )
                     else:
-                        print(f"[WARNING] Žádné textové obsahy pro hodnocení společnosti {result['company']}")
-                        sentiment_results.append({
-                            "company_name": result['company'],
-                            "rating": None
-                        })
+                        print(
+                            f"[WARNING] Žádné textové obsahy pro hodnocení společnosti {result['company']}"
+                        )
+                        sentiment_results.append(
+                            {"company_name": result["company"], "rating": None}
+                        )
                 else:
-                    print(f"[WARNING] Žádné články pro hodnocení společnosti {result['company']}")
-                    sentiment_results.append({
-                        "company_name": result['company'],
-                        "rating": None
-                    })
+                    print(
+                        f"[WARNING] Žádné články pro hodnocení společnosti {result['company']}"
+                    )
+                    sentiment_results.append(
+                        {"company_name": result["company"], "rating": None}
+                    )
             except Exception as e:
-                print(f"[ERROR] Chyba při zpracování hodnocení pro {result['company']}: {e}")
-                sentiment_results.append({
-                    "company_name": result['company'],
-                    "rating": None
-                })
+                print(
+                    f"[ERROR] Chyba při zpracování hodnocení pro {result['company']}: {e}"
+                )
+                sentiment_results.append(
+                    {"company_name": result["company"], "rating": None}
+                )
 
         # Uložení výstupu do DB
         request_data = db.session.get(RequestData, request_id)
         for item in sentiment_results:
             if item["rating"] is not None:
                 item["rating"] = float(item["rating"])  # Zajištění, že rating je float
-        request_data.sentiment_data = sentiment_results # sentiment_data
-        request_data.news_data = json.dumps(results) # news_data
+        request_data.sentiment_data = sentiment_results  # sentiment_data
+        request_data.news_data = json.dumps(results)  # news_data
         request_data.status = "done"
         db.session.commit()
 
