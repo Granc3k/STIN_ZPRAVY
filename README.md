@@ -1,6 +1,6 @@
 # Semestrální práce předmětu STIN - modul Zprávy
 
-- Martin "Granc3k" Šimon, Jakub Koněrza, Matěj Retych,
+- Martin "Granc3k" Šimon, Jakub Koněrza, Matěj Retych
 
 [![codecov](https://codecov.io/gh/Granc3k/STIN_ZPRAVY/graph/badge.svg?token=AO8L02LX7E)](https://codecov.io/gh/Granc3k/STIN_ZPRAVY)
 
