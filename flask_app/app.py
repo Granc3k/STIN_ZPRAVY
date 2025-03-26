@@ -3,6 +3,7 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for
 from flask_app.database import db, init_db
 from flask_app.models import RequestData
 from flask_app.tasks import process_request
+from flask_app.config import ALLOWED_COMPANIES_IN_UI
 import threading
 from datetime import datetime
 
@@ -68,16 +69,17 @@ def submit():
         except json.JSONDecodeError:
             return jsonify({"error": "Invalid JSON format"}), 400
 
-
     print(f"[DEBUG] Přijatá data: {data}")
     # predani promenne "data" do tasks.py
     with app.app_context():
-        new_request = RequestData(status="pending", input_data=data) # vytvoreni prvku v databazi
-        db.session.add(new_request) # pridani prvku do databaze
-        db.session.commit() # ulozeni zmen do databaze
-        request_id = new_request.id # ziskani ID noveho prvku v databazi
+        new_request = RequestData(
+            status="pending", input_data=data
+        )  # vytvoreni prvku v databazi
+        db.session.add(new_request)  # pridani prvku do databaze
+        db.session.commit()  # ulozeni zmen do databaze
+        request_id = new_request.id  # ziskani ID noveho prvku v databazi
 
-    # spusteni noveho vlakna s funkci process_request
+    # spusteni noveho vlakna s funkci process_request v tasks.py
     threading.Thread(target=process_request, args=(request_id, app)).start()
 
     # pokud je metoda GET, presmeruje na /status endpoint s request_id
@@ -91,36 +93,41 @@ def submit():
 @app.route("/output/<int:request_id>/status", methods=["GET"])
 def get_status(request_id):
     with app.app_context():
+        # vezme data z databáze k IDcku v URL a printne status zpracovani
         request_data = db.session.get(RequestData, request_id)
         if not request_data:
             return jsonify({"error": "Request not found"}), 404
         return jsonify(
             {
-                "request_id": request_id,  # Přidání ID requestu do odpovědi
+                "request_id": request_id,  # Přidání ID requestu do odpovědi - pro GET metodu u defaultni stranky
                 "status": request_data.status,
             }
         )
-        
+
+
 @app.route("/output/<int:request_id>/all", methods=["GET"])
 def get_all_request_data(request_id):
     with app.app_context():
+        # vezme data z databáze a prostě všecko vyprintí v jsonu
         request_data = db.session.get(RequestData, request_id)
         if not request_data:
             return jsonify({"error": "Request not found"}), 404
 
-        return jsonify({
-            "request_id": request_data.id,
-            "status": request_data.status,
-            "input_data": request_data.input_data,
-            "news_data": request_data.news_data,
-            "sentiment_data": request_data.sentiment_data,
-        })
-
+        return jsonify(
+            {
+                "request_id": request_data.id,
+                "status": request_data.status,
+                "input_data": request_data.input_data,
+                "news_data": request_data.news_data,
+                "sentiment_data": request_data.sentiment_data,
+            }
+        )
 
 
 @app.route("/output/<int:request_id>", methods=["GET"])
 def get_output(request_id):
     with app.app_context():
+        # vezme data z databáze a vrátí vyhodnocená data pro daný request
         request_data = db.session.get(RequestData, request_id)
         if not request_data or request_data.status != "done":
             return jsonify({"error": "Data not ready"}), 404
@@ -132,9 +139,8 @@ def get_output(request_id):
         return jsonify(request_data.sentiment_data)
 
 
-
 # Předdefinované společnosti
-ALLOWED_COMPANIES = ["Nvidia", "Tesla", "Microsoft", "Google", "Apple"]
+ALLOWED_COMPANIES = ALLOWED_COMPANIES_IN_UI
 
 # Paměťová proměnná pro stav akcií (inicializováno jako "žádné změny" s časem "Nikdy")
 stock_data = {
@@ -165,7 +171,7 @@ def ui_page():
 
             company_name = entry.get("name")
             status = entry.get("status")
-
+            # přiřazení statusu a času změny akcií
             if company_name in ALLOWED_COMPANIES and status in [0, 1]:
                 stock_data[company_name]["status"] = (
                     "nakoupeno" if status == 1 else "prodáno"
