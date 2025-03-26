@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - master  # Spustí se pouze při pushi do master
+    paths-ignore:
+        - '**/*.md'  # Ignoruje všechny Markdown soubory ve všech složkách
   pull_request:
     branches-ignore:
       - master  # Pull requesty do master se ignorují
