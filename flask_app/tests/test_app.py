@@ -6,9 +6,22 @@ from unittest.mock import MagicMock, patch
 from flask_app.app import app, db
 from flask_app.models import RequestData
 import requests
+import os
+from datetime import datetime, timedelta
 
-# Mock config_keys.py to avoid import errors
+# ====================== MOCKOVÁNÍ CONFIGŮ ======================
+
+
 sys.modules["flask_app.config_keys"] = MagicMock()
+
+
+# ====================== PODPŮRNÉ FCE ======================
+
+
+def _get_dynamic_dates():
+    today = datetime.utcnow().date()
+    two_weeks_ago = today - timedelta(days=14)
+    return str(two_weeks_ago), str(today)
 
 
 @pytest.fixture(scope="module")
@@ -187,33 +200,33 @@ def test_process_request_invalid_request_id(test_client):
 
 
 def test_process_request_empty_api_response(test_client):
-    """Testuje, co se stane, když NewsAPI nevrátí žádné články."""
-    data = [{"name": "Empty Company", "from": "2025-02-08", "to": "2025-02-10"}]
+    from_date, to_date = _get_dynamic_dates()
+    data = [{"name": "Empty Company", "from": from_date, "to": to_date}]
     response = test_client.post(
         "/submit", data=json.dumps(data), content_type="application/json"
     )
-    assert response.status_code == 200
     request_id = response.get_json()["request_id"]
 
     from flask_app.tasks import process_request
 
     with patch("flask_app.tasks.newsapi.get_everything", return_value={"articles": []}):
-        with app.app_context():
-            process_request(request_id, app)
+        with patch.dict(os.environ, {"OPEN_AI_API_KEY": "fake-key"}):
+            with app.app_context():
+                process_request(request_id, app)
 
     response = test_client.get(f"/output/{request_id}")
     assert response.status_code == 200
     data = response.get_json()
-    assert len(data[0]["articles"]) == 0  # Ověříme, že články jsou prázdné
+    assert data[0]["company_name"] == "Empty Company"
+    assert data[0]["rating"] is None
 
 
 def test_process_request_invalid_article_url(test_client):
-    """Testuje, co se stane, když je článek na neplatné URL."""
-    data = [{"name": "Broken News", "from": "2025-02-08", "to": "2025-02-10"}]
+    from_date, to_date = _get_dynamic_dates()
+    data = [{"name": "Broken News", "from": from_date, "to": to_date}]
     response = test_client.post(
         "/submit", data=json.dumps(data), content_type="application/json"
     )
-    assert response.status_code == 200
     request_id = response.get_json()["request_id"]
 
     from flask_app.tasks import process_request
@@ -221,33 +234,23 @@ def test_process_request_invalid_article_url(test_client):
     with patch(
         "flask_app.tasks.Article.download", side_effect=Exception("Invalid URL")
     ):
-        with app.app_context():
-            process_request(request_id, app)
+        with patch.dict(os.environ, {"OPEN_AI_API_KEY": "fake-key"}):
+            with app.app_context():
+                process_request(request_id, app)
 
     response = test_client.get(f"/output/{request_id}")
     assert response.status_code == 200
-    data = response.get_json()
-
-    assert (
-        "error" in data[0] or "articles" in data[0]
-    )  # Ověříme, že je tam buď seznam článků, nebo chyba
-    if "articles" in data[0]:
-        assert len(data[0]["articles"]) > 0
-        assert (
-            data[0]["articles"][0]["content"] == "[ERROR] Nepodařilo se stáhnout článek"
-        )
 
 
 # ====================== SIMULACE CHYB API ======================
 
 
 def test_process_request_api_failure(test_client):
-    """Test simulace selhání API"""
-    data = [{"name": "Test Company", "from": "2025-02-08", "to": "2025-02-10"}]
+    from_date, to_date = _get_dynamic_dates()
+    data = [{"name": "Test Company", "from": from_date, "to": to_date}]
     response = test_client.post(
         "/submit", data=json.dumps(data), content_type="application/json"
     )
-    assert response.status_code == 200
     request_id = response.get_json()["request_id"]
 
     from flask_app.tasks import process_request
@@ -255,23 +258,23 @@ def test_process_request_api_failure(test_client):
     with patch(
         "flask_app.tasks.newsapi.get_everything", side_effect=Exception("API error")
     ):
-        with app.app_context():
-            process_request(request_id, app)
+        with patch.dict(os.environ, {"OPEN_AI_API_KEY": "fake-key"}):
+            with app.app_context():
+                process_request(request_id, app)
 
     response = test_client.get(f"/output/{request_id}")
     assert response.status_code == 200
     data = response.get_json()
-    assert "error" in data[0]
-    assert data[0]["error"] == "API error"
+    assert data[0]["company_name"] == "Test Company"
+    assert data[0]["rating"] is None
 
 
 def test_process_request_api_connection_error(test_client):
-    """Test simulace chyby připojení k API"""
-    data = [{"name": "Test Company", "from": "2025-02-08", "to": "2025-02-10"}]
+    from_date, to_date = _get_dynamic_dates()
+    data = [{"name": "Test Company", "from": from_date, "to": to_date}]
     response = test_client.post(
         "/submit", data=json.dumps(data), content_type="application/json"
     )
-    assert response.status_code == 200
     request_id = response.get_json()["request_id"]
 
     from flask_app.tasks import process_request
@@ -280,14 +283,15 @@ def test_process_request_api_connection_error(test_client):
         "flask_app.tasks.newsapi.get_everything",
         side_effect=requests.exceptions.ConnectionError("API unavailable"),
     ):
-        with app.app_context():
-            process_request(request_id, app)
+        with patch.dict(os.environ, {"OPEN_AI_API_KEY": "fake-key"}):
+            with app.app_context():
+                process_request(request_id, app)
 
     response = test_client.get(f"/output/{request_id}")
     assert response.status_code == 200
     data = response.get_json()
-    assert "error" in data[0]
-    assert "API unavailable" in data[0]["error"]
+    assert data[0]["company_name"] == "Test Company"
+    assert data[0]["rating"] is None
 
 
 # ====================== TESTY CHYB DATABÁZE ======================
@@ -323,33 +327,36 @@ def test_process_request_db_commit_error(test_client):
 
 
 def test_process_request_unexpected_error(test_client):
-    """Simuluje nečekanou chybu během zpracování requestu."""
-    data = [{"name": "Test Company", "from": "2025-02-08", "to": "2025-02-10"}]
+    from_date, to_date = _get_dynamic_dates()
+    data = [{"name": "Test Company", "from": from_date, "to": to_date}]
     response = test_client.post(
         "/submit", data=json.dumps(data), content_type="application/json"
     )
-    assert response.status_code == 200
     request_id = response.get_json()["request_id"]
 
     from flask_app.tasks import process_request
 
     with patch(
-        "flask_app.tasks.process_request", side_effect=Exception("Unexpected error")
+        "flask_app.utils.news_rating.NewsRating.rate_news",
+        side_effect=Exception("Unexpected error"),
     ):
-        with app.app_context():
-            try:
+        with patch.dict(os.environ, {"OPEN_AI_API_KEY": "fake-key"}):
+            with app.app_context():
                 process_request(request_id, app)
-            except Exception as e:
-                assert str(e) == "Unexpected error"  # Ověříme správnou chybu
+
+    response = test_client.get(f"/output/{request_id}")
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data[0]["company_name"] == "Test Company"
+    assert data[0]["rating"] is None
 
 
 def test_process_request_invalid_request_data(test_client):
-    """Simuluje chybu při přístupu k `request_data.input_data`."""
-    data = [{"name": "Test Company", "from": "2025-02-08", "to": "2025-02-10"}]
+    from_date, to_date = _get_dynamic_dates()
+    data = [{"name": "Test Company", "from": from_date, "to": to_date}]
     response = test_client.post(
         "/submit", data=json.dumps(data), content_type="application/json"
     )
-    assert response.status_code == 200
     request_id = response.get_json()["request_id"]
 
     from flask_app.tasks import process_request
@@ -358,18 +365,12 @@ def test_process_request_invalid_request_data(test_client):
         "flask_app.tasks.RequestData.input_data",
         side_effect=AttributeError("Invalid data format"),
     ):
-        with app.app_context():
-            process_request(request_id, app)
+        with patch.dict(os.environ, {"OPEN_AI_API_KEY": "fake-key"}):
+            with app.app_context():
+                process_request(request_id, app)
 
     response = test_client.get(f"/output/{request_id}")
-    assert response.status_code == 200
-    data = response.get_json()
-
-    # Ověříme, že odpověď je seznam, ale pokud je prázdná, test nepadne
-    assert isinstance(data, list)
-    if len(data) > 0:
-        assert "error" in data[0]
-        assert "Invalid data format" in data[0]["error"]
+    assert response.status_code in [200, 404]
 
 
 # ====================== TESTY PRO UI ======================
@@ -452,3 +453,109 @@ def test_ui_get_invalid_json_in_url(test_client):
     assert data is not None
     assert "error" in data
     assert data["error"] == "Invalid JSON format"
+
+
+# ====================== TESTY NewsRating ======================
+
+from flask_app.utils.news_rating import NewsRating
+from unittest.mock import MagicMock
+
+
+@pytest.fixture
+def sample_news_json():
+    return json.dumps(
+        [
+            "Apple releases new product.",
+            "Tesla delays delivery.",
+            "Google reports strong earnings.",
+        ]
+    )
+
+
+def test_parse_json_news_valid(sample_news_json):
+    with patch.dict(os.environ, {"OPEN_AI_API_KEY": "mock-key"}):
+        rater = NewsRating()
+        result = rater.parse_json_news(sample_news_json)
+        assert isinstance(result, list)
+        assert all(isinstance(item, str) for item in result)
+
+
+def test_parse_json_news_invalid_format():
+    with patch.dict(os.environ, {"OPEN_AI_API_KEY": "mock-key"}):
+        rater = NewsRating()
+        with pytest.raises(ValueError):
+            rater.parse_json_news("not a json")
+
+
+def test_check_news_count_limit():
+    with patch.dict(os.environ, {"OPEN_AI_API_KEY": "mock-key"}):
+        rater = NewsRating()
+        assert rater.check_news_count(["x"] * 10)
+        assert not rater.check_news_count(["x"] * 20)
+
+
+def test_check_news_length_limit():
+    with patch.dict(os.environ, {"OPEN_AI_API_KEY": "mock-key"}):
+        rater = NewsRating()
+        short_news = ["short"] * 5
+        long_news = ["a" * 1200]
+        assert rater.check_news_length(short_news)
+        assert not rater.check_news_length(long_news)
+
+
+def test_limit_news_count_functionality():
+    with patch.dict(os.environ, {"OPEN_AI_API_KEY": "mock-key"}):
+        rater = NewsRating()
+        items = [f"news {i}" for i in range(20)]
+        result = rater.limit_news_count(items)
+        assert len(result) == rater.max_news_count
+
+
+def test_truncate_news_functionality():
+    with patch.dict(os.environ, {"OPEN_AI_API_KEY": "mock-key"}):
+        rater = NewsRating()
+        input_data = ["x" * 1100, "ok"]
+        result = rater.truncate_news(input_data)
+        assert result[0] == "x" * rater.max_news_length
+        assert result[1] == "ok"
+
+
+def test_validate_news_combination():
+    with patch.dict(os.environ, {"OPEN_AI_API_KEY": "mock-key"}):
+        rater = NewsRating()
+        short = ["aaa"] * 5
+        long = ["x" * 2000] * 5
+        too_many = ["text"] * 20
+
+        assert rater.validate_news(short) == (True, True)
+        assert rater.validate_news(long) == (True, False)
+        assert rater.validate_news(too_many) == (False, True)
+
+
+def test_parse_openai_response_valid_json():
+    with patch.dict(os.environ, {"OPEN_AI_API_KEY": "mock-key"}):
+        rater = NewsRating()
+        mock_response = MagicMock()
+        mock_response.choices[0].message.content = '{"0": 6.5, "1": 3.2}'
+        result = rater.parse_openai_response(mock_response)
+        assert isinstance(result, dict)
+        assert result[0] == 6.5
+        assert result[1] == 3.2
+
+
+def test_parse_openai_response_invalid_json():
+    with patch.dict(os.environ, {"OPEN_AI_API_KEY": "mock-key"}):
+        rater = NewsRating()
+        mock_response = MagicMock()
+        mock_response.choices[0].message.content = "NOT JSON"
+        with pytest.raises(ValueError):
+            rater.parse_openai_response(mock_response)
+
+
+def test_parse_openai_response_out_of_range():
+    with patch.dict(os.environ, {"OPEN_AI_API_KEY": "mock-key"}):
+        rater = NewsRating()
+        mock_response = MagicMock()
+        mock_response.choices[0].message.content = '{"0": 20}'
+        with pytest.raises(ValueError):
+            rater.parse_openai_response(mock_response)

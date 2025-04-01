@@ -6,4 +6,5 @@ class RequestData(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     status = db.Column(db.String(20), default="pending")
     input_data = db.Column(db.JSON)
-    processed_data = db.Column(db.JSON, nullable=True)
+    news_data = db.Column(db.JSON, nullable=True)
+    sentiment_data = db.Column(db.JSON, nullable=True)

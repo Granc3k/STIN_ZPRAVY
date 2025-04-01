@@ -1,6 +1,11 @@
 # Semestrální práce předmětu STIN - modul Zprávy
 
-- Martin "Granc3k" Šimon, Jakub Koněrza, Matěj Retych,
+| Tým                           |
+|:-----------------------------:|
+| Martin "Granc3k" Šimon         |
+| Jakub "Sýcockrka" Koněrza      |
+| Matěj "?" Retych              |
+
 
 [![codecov](https://codecov.io/gh/Granc3k/STIN_ZPRAVY/graph/badge.svg?token=AO8L02LX7E)](https://codecov.io/gh/Granc3k/STIN_ZPRAVY)
 
@@ -53,7 +58,7 @@ pip install newspaper3k lxml[html_clean] flask-sqlalchemy newsapi-python Flask W
 
 ### 1. Zadávání dat ke zpracování
 - Úvodní stránka slouží k zadání JSON dat pro zpracování.
-- Data lze odeslat pomocí URL parametrů: ```/submit?data="[JSON_DATA]```
+- Data lze odeslat pomocí URL parametrů: ```/submit?data="[JSON_DATA]"```
 
 ### 2. Získání zpracovaných dat
 - Po zadání dat se vygeneruje **ID requestu**, které se zobrazí na stránce.
@@ -74,7 +79,10 @@ Možné stavy:
 - Formáty všech podporovaných JSON struktur jsou k dispozici přímo na jednotlivých endpointech aplikace.
 
 
-
+## Spouštění testů
+```bash
+pytest --cov=flask_app flask_app/tests/
+```
 
 
 ## Endpointy
@@ -84,7 +92,53 @@ Možné stavy:
 | `/`                       | Výchozí stránka pro zadávání dat ke zpracování zpráv |
 | `/output/<ID_requestu>`   | Zobrazení zpracovaných dat                   |
 | `/output/<ID_requestu>/status` | Zobrazení stavu zpracování dat        |
-| `/UI`                     | Zobrazení portfolia                          |
+| `/output/<ID_requestu>/all` | Zobrazení veškerých dat k danému requestu        |
+| `/UI`                     | Zobrazení portfolia                               |
 
+
+## Ukázka vzorových dat
+- pro posílaných dat na zpracování:
+- pro nejlepší výsledek žádejte o zpracování dat maximálně 2-3 týdny zpětně od vašeho aktuálního datumu - jinak se může stát že API nedokáže vzít data
+
+```json
+[
+  {
+    "name": "Nvidia",
+    "from": "2025-03-04",
+    "to": "2025-03-10"
+  },
+  {
+    "name": "Microsoft",
+    "from": "2025-03-04",
+    "to": "2025-03-10"
+  },
+  {
+    "name": "Apple",
+    "from": "2025-03-04",
+    "to": "2025-03-10"
+  },
+  {
+    "name": "Google",
+    "from": "2025-03-04",
+    "to": "2025-03-10"
+  },
+  {
+    "name": "Amazon",
+    "from": "2025-03-04",
+    "to": "2025-03-10"
+  }
+]
+
+```
+
+
+- pro posílání dat na prodej/koupi na endpointu /UI:
+```json
+[
+    {"name": "Nvidia", "status": 0},
+    {"name": "Apple", "status": 1},
+    {"name":"Google", "status":0}
+]
+```
 
 
