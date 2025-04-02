@@ -1,6 +1,7 @@
 import requests
 import time
 import json
+import datetime
 
 def print_pretty_json(title, data):
     print(title)
@@ -9,31 +10,35 @@ def print_pretty_json(title, data):
 URL = "https://stin-zpravy.azurewebsites.net"
 
 if(__name__) == "__main__":
+    today = datetime.date.today()
+    two_weeks_ago = today - datetime.timedelta(weeks=2)
+    formatted_date = today.strftime("%Y-%m-%d")
+    formatted_two_weeks = two_weeks_ago.strftime("%Y-%m-%d")
     test_data = [
         {
             "name": "Nvidia",
-            "from": "2025-03-04",
-            "to": "2025-03-10"
+            "from": formatted_two_weeks,
+            "to": formatted_date
         },
         {
             "name": "Microsoft",
-            "from": "2025-03-04",
-            "to": "2025-03-10"
+            "from": formatted_two_weeks,
+            "to": formatted_date
         },
         {
             "name": "Apple",
-            "from": "2025-03-04",
-            "to": "2025-03-10"
+            "from": formatted_two_weeks,
+            "to": formatted_date
         },
         {
             "name": "Google",
-            "from": "2025-03-04",
-            "to": "2025-03-10"
+            "from": formatted_two_weeks,
+            "to": formatted_date
         },
         {
             "name": "Amazon",
-            "from": "2025-03-04",
-            "to": "2025-03-10"
+            "from": formatted_two_weeks,
+            "to": formatted_date
         }
     ]
 
