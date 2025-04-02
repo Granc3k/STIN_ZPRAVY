@@ -54,6 +54,9 @@ pip install newspaper3k lxml[html_clean] flask-sqlalchemy newsapi-python Flask W
 ## Návrh zpracování
 ![diagram](./Dokumentace/navrh_zpracovani.svg)
 
+## Komunikace
+![diagram](./Dokumentace/komunikace.svg)
+
 ## Používání aplikace
 
 ### 1. Zadávání dat ke zpracování
