@@ -4,7 +4,7 @@
 |:-----------------------------:|
 | Martin "Granc3k" Šimon         |
 | Jakub "Sýcockrka" Koněrza      |
-| Matěj "?" Retych              |
+| Matěj "REM" Retych              |
 
 
 [![codecov](https://codecov.io/gh/Granc3k/STIN_ZPRAVY/graph/badge.svg?token=AO8L02LX7E)](https://codecov.io/gh/Granc3k/STIN_ZPRAVY)
