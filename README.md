@@ -4,7 +4,7 @@
 |:-----------------------------:|
 | Martin "Granc3k" Šimon         |
 | Jakub "Sýcockrka" Koněrza      |
-| Matěj "?" Retych              |
+| Matěj "REM" Retych              |
 
 
 [![codecov](https://codecov.io/gh/Granc3k/STIN_ZPRAVY/graph/badge.svg?token=AO8L02LX7E)](https://codecov.io/gh/Granc3k/STIN_ZPRAVY)
@@ -53,6 +53,9 @@ pip install newspaper3k lxml[html_clean] flask-sqlalchemy newsapi-python Flask W
 
 ## Návrh zpracování
 ![diagram](./Dokumentace/navrh_zpracovani.svg)
+
+## Komunikace
+![diagram](./Dokumentace/komunikace.svg)
 
 ## Používání aplikace
 
