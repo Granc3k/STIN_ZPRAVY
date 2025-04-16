@@ -539,8 +539,8 @@ def test_parse_openai_response_valid_json():
         mock_response.choices[0].message.content = '{"0": 6.5, "1": 3.2}'
         result = rater.parse_openai_response(mock_response)
         assert isinstance(result, dict)
-        assert result[0] == 3
-        assert result[1] == -3.6
+        assert result[0] == pytest.approx(3)
+        assert result[1] == pytest.approx(-3.6)
 
 
 def test_parse_openai_response_invalid_json():
