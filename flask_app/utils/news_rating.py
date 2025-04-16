@@ -248,7 +248,7 @@ class NewsRating:
 
         Tato metoda přijímá odpověď z OpenAI API, extrahuje JSON obsahující hodnocení z obsahu odpovědi,
         převede jej na slovník, kde klíče jsou celá čísla (ID zpráv) a hodnoty jsou desetinná čísla (hodnocení).
-        Dále provádí validaci, zda jsou všechna hodnocení v rozsahu 0 až 10.
+        Dále provádí validaci, zda jsou všechna hodnocení v rozsahu 0 až 10. Následně je převede na rozsah -10 až 10.
 
         Parameters:
         ----------
@@ -258,7 +258,7 @@ class NewsRating:
         Returns:
         ------------------
         Dict[int, float]
-            Slovník, kde klíče jsou ID zpráv (int) a hodnoty jsou hodnocení (float) v rozsahu 0-10.
+            Slovník, kde klíče jsou ID zpráv (int) a hodnoty jsou hodnocení (float) v rozsahu -10 až 10.
 
         Raises:
         -------
@@ -289,11 +289,8 @@ class NewsRating:
             for k, v in ratings_data.items():
                 rating = float(v)
                 if not (0 <= rating <= 10):
-                    raise ValueError(
-                        f"Neplatné hodnocení {rating} pro zprávu {k}. Musí být mezi 0-10."
-                    )
-                ratings[int(k)] = rating
-
+                    raise ValueError(f"Neplatné hodnocení {rating} pro zprávu {k}. Musí být mezi 0-10.")
+                ratings[int(k)] = (rating - 5) * 2  # Převod na rozsah -10 až 10
             return ratings
         except (KeyError, json.JSONDecodeError) as e:
             raise ValueError(f"Chyba při zpracování odpovědi OpenAI API: {e}")
