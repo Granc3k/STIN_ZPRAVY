@@ -19,6 +19,8 @@ def check_changes(old_data, new_data, test_data):
 
 
 if(__name__) == "__main__":
+    print("============================ TESTOVÁNÍ PORTFOLIA ============================")
+    print("Zasílám na toto URL: ",URL)
     test_data = [
     {"name": "Nvidia", "status": 0},
     {"name": "Apple", "status": 1},
@@ -36,3 +38,5 @@ if(__name__) == "__main__":
 
     print("Kontrola změn:")
     check_changes(old_portfolio,new_portfolio,test_data)
+    
+    print("============================ TESTOVÁNÍ PROVOZU UKONČENO ============================\n\n\n")

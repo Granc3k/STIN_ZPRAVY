@@ -41,7 +41,8 @@ if(__name__) == "__main__":
             "to": formatted_date
         }
     ]
-
+    print("============================ TESTOVÁNÍ PROVOZU ============================")
+    
     print_pretty_json(f"zasílám na toto URL: {URL} \ntyto testovací data: ",test_data)
     
     response = requests.post(f"{URL}/submit",json=test_data)
@@ -62,3 +63,6 @@ if(__name__) == "__main__":
         print("Pozor: nebyly načteny žádné články")
     else:
         print_pretty_json("zprávy získané o firmách:",articles)
+        
+    print("============================ TESTOVÁNÍ PROVOZU UKONČENO ============================\n\n\n")
+    
