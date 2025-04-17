@@ -390,7 +390,7 @@ def test_ui_get_empty_json(test_client):
     assert data is not None
     assert "stocks" in data
 
-    expected_companies = ["Nvidia", "Tesla", "Microsoft", "Google", "Apple"]
+    expected_companies = ["NVDA", "TSLA", "Microsoft", "GOOG", "AAPL"]
     for company in expected_companies:
         assert any(
             stock["company"] == company and stock["status"] == "žádné změny"
@@ -400,7 +400,7 @@ def test_ui_get_empty_json(test_client):
 
 def test_ui_post_update(test_client):
     """Testuje, že POST /UI aktualizuje stav společnosti"""
-    update_data = [{"name": "Nvidia", "status": 1}, {"name": "Apple", "status": 0}]
+    update_data = [{"name": "NVDA", "status": 1}, {"name": "AAPL", "status": 0}]
     response = test_client.post(
         "/UI", data=json.dumps(update_data), content_type="application/json"
     )
@@ -413,11 +413,11 @@ def test_ui_post_update(test_client):
     data = response.get_json()
     assert data is not None
     assert any(
-        stock["company"] == "Nvidia" and stock["status"] == "nakoupeno"
+        stock["company"] == "NVDA" and stock["status"] == "nakoupeno"
         for stock in data["stocks"]
     )
     assert any(
-        stock["company"] == "Apple" and stock["status"] == "prodáno"
+        stock["company"] == "AAPL" and stock["status"] == "prodáno"
         for stock in data["stocks"]
     )
 
@@ -425,7 +425,7 @@ def test_ui_post_update(test_client):
 def test_ui_get_with_url_params(test_client):
     """Testuje, že GET /UI?data=[...] správně aktualizuje data"""
     response = test_client.get(
-        '/UI?data=[{"name":"Tesla","status":1},{"name":"Google","status":0}]'
+        '/UI?data=[{"name":"TSLA","status":1},{"name":"GOOG","status":0}]'
     )
     assert response.status_code == 200
 
@@ -435,18 +435,18 @@ def test_ui_get_with_url_params(test_client):
     data = response.get_json()
     assert data is not None
     assert any(
-        stock["company"] == "Tesla" and stock["status"] == "nakoupeno"
+        stock["company"] == "TSLA" and stock["status"] == "nakoupeno"
         for stock in data["stocks"]
     )
     assert any(
-        stock["company"] == "Google" and stock["status"] == "prodáno"
+        stock["company"] == "GOOG" and stock["status"] == "prodáno"
         for stock in data["stocks"]
     )
 
 
 def test_ui_get_invalid_json_in_url(test_client):
     """Testuje, že GET /UI s nevalidním JSON parametrem vrací chybu 400"""
-    response = test_client.get('/UI?data={"name":"Nvidia","status":1}')
+    response = test_client.get('/UI?data={"name":"NVDA","status":1}')
     assert response.status_code == 400
 
     data = response.get_json()
