@@ -138,9 +138,9 @@ pytest --cov=flask_app flask_app/tests/
 - pro posílání dat na prodej/koupi na endpointu /UI:
 ```json
 [
-    {"name": "Nvidia", "status": 0},
-    {"name": "Apple", "status": 1},
-    {"name":"Google", "status":0}
+    {"name": "NVDA", "status": 0},
+    {"name": "AAPL", "status": 1},
+    {"name":"GOOG", "status":0}
 ]
 ```
 

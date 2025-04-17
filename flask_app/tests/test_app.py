@@ -390,7 +390,7 @@ def test_ui_get_empty_json(test_client):
     assert data is not None
     assert "stocks" in data
 
-    expected_companies = ["NVDA", "TSLA", "Microsoft", "GOOG", "AAPL"]
+    expected_companies = ["NVDA", "TSLA", "MSFT", "GOOG", "AAPL"]
     for company in expected_companies:
         assert any(
             stock["company"] == company and stock["status"] == "žádné změny"
