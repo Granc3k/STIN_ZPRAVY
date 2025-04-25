@@ -50,6 +50,9 @@ jobs:
     needs: test
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write  # 🔥 Tohle je KLÍČOVÉ – umožní přihlášení přes OIDC!
+      contents: read
     environment:
       name: 'Production'
     steps:
