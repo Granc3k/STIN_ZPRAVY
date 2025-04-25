@@ -10,7 +10,7 @@
 [![codecov](https://codecov.io/gh/Granc3k/STIN_ZPRAVY/graph/badge.svg?token=AO8L02LX7E)](https://codecov.io/gh/Granc3k/STIN_ZPRAVY)
 
 <p align="center">
-  <strong><a href="https://stin-zpravy.azurewebsites.net/">Odkaz na nasazené řešení</a> 📊</strong>
+  <strong><a href="https://stin-zpravy-hjdkcwh3fefhe8gv.germanywestcentral-01.azurewebsites.net/">Odkaz na nasazené řešení</a> 📊</strong>
 </p>
 
 

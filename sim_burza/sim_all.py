@@ -1,4 +1,5 @@
 import subprocess
+URL = "https://stin-zpravy-hjdkcwh3fefhe8gv.germanywestcentral-01.azurewebsites.net/"
 
 def main():
     subprocess.run(["python", "sim_burza/sim_output.py"], check=True)

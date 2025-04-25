@@ -2,12 +2,12 @@ import requests
 import time
 import json
 import datetime
+from sim_all import URL
 
 def print_pretty_json(title, data):
     print(title)
     print(json.dumps(data, indent=4, ensure_ascii=False))
 
-URL = "https://stin-zpravy.azurewebsites.net"
 
 if(__name__) == "__main__":
     today = datetime.date.today()
