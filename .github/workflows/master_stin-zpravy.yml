@@ -1,70 +1,79 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-# More info on Python, GitHub Actions, and Azure App Service: https://aka.ms/python-webapps-actions
-
-name: Build and deploy Python app to Azure Web App - stin-zpravy
+name: Deploy Flask App to Azure
 
 on:
   push:
     branches:
       - master
-  workflow_dispatch:
+    paths-ignore:
+      - '**/*.md'
+  pull_request:
+    branches-ignore:
+      - master
 
 jobs:
-  build:
+  test:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    permissions:
-      contents: read #This is required for actions/checkout
-
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Set up Python version
+      - name: Set up Python 3.13
         uses: actions/setup-python@v5
         with:
-          python-version: '3.13'
+          python-version: "3.13"
 
-      - name: Create and start virtual environment
+      - name: Set up virtual environment and install dependencies
         run: |
-          python -m venv venv
-          source venv/bin/activate
-      
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-        
-      # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
+          python -m venv antenv
+          source antenv/bin/activate
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest pytest-cov
 
-      - name: Zip artifact for deployment
-        run: zip release.zip ./* -r
+      - name: Verify installed packages
+        run: |
+          source antenv/bin/activate
+          pip list | grep uvicorn || echo "Uvicorn neni nainstalovan!"
+          which uvicorn || echo "Uvicorn neni v PATH!"
 
-      - name: Upload artifact for deployment jobs
-        uses: actions/upload-artifact@v4
-        with:
-          name: python-app
-          path: |
-            release.zip
-            !venv/
+      - name: Set environment variables for tests
+        run: |
+          echo "NEWS_API_KEY=${{ secrets.NEWS_API_KEY }}" >> $GITHUB_ENV
+          echo "OPEN_AI_API_KEY=${{ secrets.OPEN_AI_API_KEY }}" >> $GITHUB_ENV
+
+      - name: Run tests with coverage
+        run: |
+          source antenv/bin/activate
+          pytest --cov --junitxml=junit.xml -o junit_family=legacy --cov-report=xml
 
   deploy:
+    needs: test
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    needs: build
     environment:
       name: 'Production'
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
-    permissions:
-      id-token: write #This is required for requesting the JWT
-      contents: read #This is required for actions/checkout
-
     steps:
-      - name: Download artifact from build job
-        uses: actions/download-artifact@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
         with:
-          name: python-app
+          python-version: "3.13"
 
-      - name: Unzip artifact for deployment
-        run: unzip release.zip
+      - name: Set up virtual environment and install dependencies
+        run: |
+          python -m venv antenv
+          source antenv/bin/activate
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-      
+      - name: Verify installed packages
+        run: |
+          source antenv/bin/activate
+          pip list | grep uvicorn || echo "Uvicorn neni nainstalovan!"
+          which uvicorn || echo "Uvicorn neni v PATH!"
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -72,10 +81,20 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_3E708DAC42D8484590A6B233EE771320 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_42B716814DBB4A61A57916F8CB2498F7 }}
 
-      - name: 'Deploy to Azure Web App'
+      - name: Set environment variables in Azure
+        run: |
+          az webapp config appsettings set --name stin-zpravy --resource-group stin-zpravy_group \
+          --settings NEWS_API_KEY=${{ secrets.NEWS_API_KEY }} \
+                    OPEN_AI_API_KEY=${{ secrets.OPEN_AI_API_KEY }}
+
+      - name: Set startup command for Flask app
+        run: |
+          az webapp config set --name stin-zpravy --resource-group stin-zpravy_group \
+          --startup-file "python -m uvicorn flask_app.app:app --host 0.0.0.0 --port \$PORT --workers 1 --interface wsgi"
+
+      - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
-        id: deploy-to-webapp
         with:
           app-name: 'stin-zpravy'
           slot-name: 'Production'
-          
+          package: .
